@@ -34,6 +34,12 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
 	return NULL;
 }
 
+/* Aufgabe 2 
+ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
+	
+} */
+
+
 int main(void) {
 	DialogRec *match;
 	
