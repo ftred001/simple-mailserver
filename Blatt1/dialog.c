@@ -3,12 +3,14 @@
 #include <strings.h>
 #include "dialog.h"
 
-int validate_noparam() {
-	return 0;
+int globalstate = 0;
+
+int validate_noparam(DialogRec *d) {
+	return !d->param;
 }
 
-int validate_onoff() {
-	return 1;
+int validate_onoff(DialogRec *d) {
+	return !strcmp(d->param, "on") || !strcmp(d->param, "off"); 
 }
 
 DialogRec dialog[] = {
@@ -37,33 +39,57 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
 
 ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 	ProlResult result;
-	DialogRec *match;
+	DialogRec *drecord;
 	char *divider = " ";
 	char *token;
 	char *param = line;
+	char infomsg[GRMSGMAX];
 	
 	token = __strtok_r(param, divider, &param);
 	printf("Command: %s Param: %s\n", token, param);
-	match = findDialogRec(token, dialogspec);
-	if (match !=NULL) {
+	
+	drecord = findDialogRec(token, dialogspec);
+	if (drecord !=NULL) {
+		/* Check if global state and CMD-State drecord */
+		if (drecord->state == state) {
+			strcpy(drecord->param, param);
+			
+		} else {
+			result.failed = '1';
+			result.dialogrec = NULL;
+			strcpy(result.info, "The global state did not drecord the command-state");
+		}
+		
+		
+		
+		
+		/* Ändere State */
+		globalstate = drecord->nextstate;
 		result.failed = '0';
 		strcpy(result.info, "Command was found");
-		printf("Command: [ %s ] Param: [ %s ]\n",match->command, match->param);
+		printf("Command: [ %s ] Param: [ %s ]\n",drecord->command, drecord->param);
 	} else {
 		result.failed = '1';
 		result.dialogrec = NULL;
-		strcpy(result.info, "Command was not found");
+		strcpy(infomsg, "The following command was not found: ");
+		strcat(infomsg, token);
+		strcpy(result.info, infomsg);
 	}
-	printf("Result ist: %c %s\n", result.failed, result.info);
+	
+
 	return result;
 }
 
 
 int main(void) {
-	char line[LINEMAX] = "toaster forever";
+	ProlResult res;
+	char line[LINEMAX] = "BEGIN";
+	char line2[LINEMAX] = "Toaster forever";
 
-	processLine(line, 0, dialog);
-
+	res = processLine(line, globalstate, dialog);
+	printf("Status: %c Info: %s State: %d \n", res.failed, res.info, globalstate);
+	res = processLine(line2, globalstate, dialog);
+	printf("Status: %c Info: %s State: %d \n", res.failed, res.info, globalstate);
 	
 	return 0;
 }
