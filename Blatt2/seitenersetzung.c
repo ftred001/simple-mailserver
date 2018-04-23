@@ -65,10 +65,6 @@ void zaehler_aktualisieren(PageFrame rahmen[]) {
     for (i=0; i<PAGEFRAMES; i++) {
 		/* Shifte alle Zaehler nach rechts */
 		rahmen[i].zaehler = rahmen[i].zaehler>>1;
-		if (rahmen[i].ref_bit == 2) {
-			rahmen[i].zaehler = 0;
-			rahmen[i].ref_bit = 1;
-		}
 		
 		if (rahmen[i].ref_bit == 1) {
 			rahmen[i].zaehler = (rahmen[i].zaehler | eins);
@@ -114,8 +110,10 @@ void seitenzugriff(char seite, PageFrame rahmen[]) {
 		}
    }
    printf("Verdraenge Seite %c aus Rahmen %d\n", rahmen[min_index].seite, min_index);
+   printf("Belege Rahmen %d mit Seite %c\n", min_index, seite);
    rahmen[min_index].seite = seite;
-   rahmen[min_index].ref_bit = 2;
+   rahmen[min_index].ref_bit = 1;
+   rahmen[min_index].zaehler = 0;
    return;
    
 	
