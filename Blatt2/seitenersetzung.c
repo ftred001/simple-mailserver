@@ -53,7 +53,8 @@ void dumpframes(PageFrame rahmen[]) {
 /****************************************************************************/
 
 void zaehler_aktualisieren(PageFrame rahmen[]) {
-
+	int i;
+	int eins = 1<<7;
    /* * * B I T T E   H I E R   E R G A E N Z E N * * *
     *
     * Aktualisierung der Zaehlerstaende fuer alle Seitenrahmen
@@ -61,17 +62,67 @@ void zaehler_aktualisieren(PageFrame rahmen[]) {
     * danach ref_bits loeschen.
     *
     */
-
+    for (i=0; i<PAGEFRAMES; i++) {
+		/* Shifte alle Zaehler nach rechts */
+		rahmen[i].zaehler = rahmen[i].zaehler>>1;
+		if (rahmen[i].ref_bit == 2) {
+			rahmen[i].zaehler = 0;
+			rahmen[i].ref_bit = 1;
+		}
+		
+		if (rahmen[i].ref_bit == 1) {
+			rahmen[i].zaehler = (rahmen[i].zaehler | eins);
+			rahmen[i].ref_bit = 0;
+		}
+	}
+    return;
 }
 
 
 void seitenzugriff(char seite, PageFrame rahmen[]) {
+   int i,j,k, min_index;
+   unsigned int min;
    printf("\nZugriff auf Seite %c\n",seite);
-
+   
+   /* Prüfe, ob Seite schon da */
+   for (i=0; i<PAGEFRAMES; i++) {
+	   if (seite == rahmen[i].seite) {
+		   printf("Seite %c schon in Rahmen %d\n", seite, i);
+		   rahmen[i].ref_bit = 1;
+		   return; 
+	   }
+   }
+   
+   printf("SEITENFEHLER fuer Seite %c\n", seite);
+   /* Finde freien Rahmenplatz */
+   for (j=0; j<PAGEFRAMES; j++) {
+		if (rahmen[j].seite == 0) {
+			printf("Rahmen %d ist noch frei, wird mit %c belegt\n", j, seite);
+			rahmen[j].seite = seite;
+			rahmen[j].ref_bit = 1;
+			return;			
+		}
+   }
+   
+   /* Finde ältesten Eintrag im Rahmen und verwerfe ihn. */
+   min = rahmen[0].zaehler;
+   min_index = 0;
+   for (k=1; k<PAGEFRAMES; k++) {
+	   if (min > rahmen[k].zaehler) {
+			min = rahmen[k].zaehler;
+			min_index = k;
+		}
+   }
+   printf("Verdraenge Seite %c aus Rahmen %d\n", rahmen[min_index].seite, min_index);
+   rahmen[min_index].seite = seite;
+   rahmen[min_index].ref_bit = 2;
+   return;
+   
+	
    /* * * B I T T E   H I E R   E R G A E N Z E N * * *
     *
     * Gibt es schon Rahmen mit Seite 'seite'?
-    *   ja? gut
+    *   ja? gut -> aktualisiere Zähler
     *   nein?
     *     Ist noch ein Rahmen frei?
     *       ja? Seite in freien Rahmen einstellen
@@ -80,6 +131,10 @@ void seitenzugriff(char seite, PageFrame rahmen[]) {
     *
     * Durch Bildschirmausgabe die Schritte bitte dokumentieren
     */
+    
+    
+    
+    
 
 }
 
