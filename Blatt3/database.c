@@ -21,10 +21,26 @@ int speichern(int fd, DBRecord *dbr) {
 	return 0;
 }
 
+int lesen(int lese_fd, char *buffer) {
+	int gelesen;
+	
+	while (1) {
+		gelesen = read(lese_fd, buffer, BUFFSIZE);
+		if (gelesen == 0) {
+			break;
+		} else if (gelesen<0) {
+			perror("Lesefehler");
+			break;
+		}
+	}
+	return 1;
+	
+}
+
 int main(int argc, char *argv[]) {
 	int lese_fd, schreib_fd;
 	unsigned anzahl;
-	char *daten;
+	char buffer[BUFFSIZE];
 	DBRecord test = {"key1", "cat1", "value toll"};
 	DBRecord test2 = {"key2 ist länger", "Kategoriename", "Values gehen mir auf den sack!"};
 	
@@ -46,9 +62,8 @@ int main(int argc, char *argv[]) {
 		exit(2);
 	}
 	
-	read(lese_fd, daten, anzahl);
-	printf("Eingelesener String %s\n Anzahl Bytes: %d\n",daten, anzahl);
-	
+	lesen(lese_fd, buffer);
+	printf("Eingelesener String %s\n Anzahl Bytes:\n",buffer);
 	close(lese_fd);
 	
 	return 0;
