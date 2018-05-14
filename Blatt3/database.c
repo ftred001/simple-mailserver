@@ -6,6 +6,7 @@
 #include <unistd.h> /* Folie 77 */
 #include <sys/types.h> /* Folie 80 */
 #include <sys/mman.h> /*Folie 86 */
+#include <assert.h>
 #include "database.h"
 
 
@@ -18,6 +19,10 @@ int speichern(int fd, DBRecord *dbr) {
 }
 
 int match_filter(DBRecord *rec, const void *data) {
+	if (strlen(data) == 0) {
+		return 1;
+	}
+	
 	if (!strcmp(rec->key, data)) {
 		return 1;
 	}
@@ -43,11 +48,9 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	
 	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, maprecord[i].key)) {
-			printf("\n KEY Match: %s %s\n", record->key, maprecord[i].key);
 			return i;
 		}
 		if (!strcmp(record->cat, maprecord[i].cat)) {
-			printf("\n CAT Match: %s %s\n", record->cat, maprecord[i].cat);
 			return i;
 		}
 	}
@@ -64,14 +67,11 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	laenge = lseek(fd, 0, SEEK_END);
 	
 	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	
-	printf("GET INDEX %d : %s %s %s\n", index, maprecord[index].key, maprecord[index].cat, maprecord[index].value);
-
 	strcpy(result->key, maprecord[index].key);
 	strcpy(result->cat, maprecord[index].cat);
 	strcpy(result->value, maprecord[index].value);
 	
-	printf("GET Result: %s %s %s\n\n", result->key, result->cat, result->value);
+	printf("=====GET Result=====\n %s %s %s\n\n", result->key, result->cat, result->value);
 
 	return 0;
 }
@@ -85,13 +85,12 @@ int db_list(const char *path, int outfd,
 	DBRecord *maprecord;
 	char *zeile = malloc(sizeof(DBRecord)+ 8);
 	char *separator = " | ";
+	zeile  = strcpy(zeile,"");
 	
 	in_fd = open(path, O_RDONLY);
 	laenge = lseek(in_fd,0, SEEK_END);
 	
 	data_count = laenge / sizeof(DBRecord);
-	
-	printf("Anzahl Datensätze: %ld\n\n", data_count);
 	
 	maprecord = mmap(0, laenge, PROT_READ, MAP_SHARED, in_fd, 0);
 	
@@ -127,21 +126,50 @@ int db_list(const char *path, int outfd,
 		}
 	}
 	
-	printf("DB List: \n%s \n\n", zeile);
+	printf("==========DB List:==========\n%s \n", zeile);
 	
 	munmap(maprecord, laenge);
 	return -42;
 }
 
-int main(int argc, char *argv[]) {
-	int schreib_fd;
-	int map_fd, laenge, i;
-	DBRecord test = {"key1  sadas d a", "cat1", "value toll"};
-	DBRecord test2 = {"key2", "Kategoriename", "Values sind wirklich super!"};
+int db_update(const char *filepath, const DBRecord *new) {
+	return -42;
+}
+
+int db_put(const char *filepath, int index, const DBRecord *record) {
+	int fd, laenge;
 	DBRecord *maprecord;
-	DBRecord matchrecord = {"key1", "Kategoriename", "Toller Value"};
-	DBRecord *match = &matchrecord;
 	
+	printf("========PUT OPERATION========\n PUT RECORD %s in Index: %d \n\n", record->key, index);
+	
+	fd = open(filepath, O_RDWR, 0644);
+	laenge = lseek(fd, 0, SEEK_END);
+	
+	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	
+	strcpy(maprecord[index].key, record->key);
+	strcpy(maprecord[index].cat, record->cat);
+	strcpy(maprecord[index].value,record->value);
+	
+	munmap(maprecord, laenge);
+	
+	return 1;
+}
+
+int db_del(const char *filepath, int index) {
+
+return -42;
+}
+
+int main(int argc, char *argv[]) {
+	int schreib_fd, search_result;
+	char *filepath = "hier";
+	DBRecord test = {"key1", "cat1", "value toll"};
+	DBRecord test2 = {"key2", "Kategorie 2", "Values sind wirklich super!"};
+	DBRecord test3= {"key3", "cat3", "value toll"};
+	DBRecord test4 = {"key4", "cat4", "Values sind wirklich super!"};
+	DBRecord such_record = {"key4", "Kategoriename", "Toller Value"};
+	DBRecord replace_record = {"key_ersatz", "Kategorieersatz", "Neuer Wert"};
 	DBRecord index_result;
 	
 	
@@ -155,30 +183,20 @@ int main(int argc, char *argv[]) {
 	}
 	speichern(schreib_fd, &test);
 	speichern(schreib_fd, &test2);
+	speichern(schreib_fd, &test3);
+	speichern(schreib_fd, &test4);
 	close(schreib_fd);
 	/* ENDE Schreibe Testdaten in Datei ENDE*/
 	
-	/* Einlesen per mmap(). */
-	map_fd = open("hier", O_RDWR, 0644);
-	laenge = lseek(map_fd, 0, SEEK_END);
 	
-	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
+	search_result = db_search(filepath, 0, &such_record);
+	printf("=====SEARCH RESULT=====\nIndex: %d\n==========\n\n", search_result);
+	db_get(filepath, 0, &index_result);
+	db_list(filepath, schreib_fd, match_filter,"");
 	
-	for (i=0; i<(laenge/sizeof(DBRecord)); i++) {
-		printf("Key: %s, Cat: %s, Value: %s\n", maprecord[i].key, maprecord[i].cat, maprecord[i].value);
-	}
-	munmap(maprecord, laenge);
-	/* ENDE Einlesen per mmap() ENDE) */
-	
-	/* In Datenbank nach Eintrag suchen */
-	db_search("hier", 0, match);
 
-	/* DB-Eintrag zu Index ausgeben */
-	db_get("hier", 0, &index_result); 
-	
-	/* DB-List ausgeben */
-	db_list("hier", schreib_fd, match_filter,"cat1");
-		
+	db_put(filepath, 3, &replace_record);
+	db_list(filepath, schreib_fd, match_filter,"");
 	
 	return 0;
 }
