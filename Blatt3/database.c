@@ -9,12 +9,6 @@
 #include "database.h"
 
 
-int db_list(const char *path, int outfd, 
-	int (*filter)(DBRecord *rec, const void *data),
-	const void *data) {
-	 return 0;
-}
-
 int speichern(int fd, DBRecord *dbr) {
 	if (write(fd, dbr, sizeof(DBRecord)) < 0 ) {
 		perror("speichern (write)\n");
@@ -23,18 +17,22 @@ int speichern(int fd, DBRecord *dbr) {
 	return 0;
 }
 
+
 int db_search(const char *filepath, int start, DBRecord *record) {
 	/* returns index if successful, returns -1 if not found, -42 if not found */
 	int map_fd, laenge, i;
+	unsigned long data_count;
 	DBRecord *maprecord;
 	
-
 	map_fd = open(filepath, O_RDWR, 0644);
 	laenge = lseek(map_fd, 0, SEEK_END);
 	
+	data_count = laenge / sizeof(DBRecord);
+	
 	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
 	
-	for (i=0; i<5; i++) {
+	/* TODO: make loop run til end instead of for-loop */
+	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, maprecord[i].key)) {
 			printf("\n KEY Match: %s %s\n", record->key, maprecord[i].key);
 			return i;
@@ -64,16 +62,70 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	strcpy(result->cat, maprecord[index].cat);
 	strcpy(result->value, maprecord[index].value);
 	
-	printf("GET Result: %s %s %s\n", result->key, result->cat, result->value);
+	printf("GET Result: %s %s %s\n\n", result->key, result->cat, result->value);
 
 	return 0;
+}
+
+int db_list(const char *path, int outfd, 
+  int (*filter)(DBRecord *rec, const void *data), const void *data) {
+	/* Liest Datenbank ein und schreibt Inhalt als menschenlesbare Tabelle in outfd. */
+	int in_fd, laenge,i,s;
+	int key_rest, cat_rest, value_rest;
+	unsigned long data_count;
+	DBRecord *maprecord;
+	char *zeile = malloc(sizeof(DBRecord)+ 8);
+	char *separator = " | ";
+	
+	in_fd = open(path, O_RDONLY);
+	laenge = lseek(in_fd,0, SEEK_END);
+	
+	data_count = laenge / sizeof(DBRecord);
+	
+	printf("Anzahl Datensätze: %ld\n\n", data_count);
+	
+	maprecord = mmap(0, laenge, PROT_READ, MAP_SHARED, in_fd, 0);
+	
+	
+	/* Format List */
+	for (i=0; i<data_count; i++) {
+		zeile = strcat(zeile, "| ");
+		/* Key */
+		zeile = strcat(zeile, maprecord[i].key);
+		key_rest = DB_KEYLEN - strlen(maprecord[i].key);
+		for (s=0; s<key_rest; s++) {
+			zeile = strcat(zeile, " ");
+		}
+		zeile = strcat(zeile, separator);
+		
+		/* Cat */
+		zeile = strcat(zeile, maprecord[i].cat);
+		cat_rest = DB_CATLEN - strlen(maprecord[i].cat);
+		for (s=0; s<cat_rest; s++) {
+			zeile = strcat(zeile, " ");
+		}
+		zeile = strcat(zeile, separator);
+		
+		/* Value */
+		zeile = strcat(zeile, maprecord[i].value);
+		value_rest = DB_VALLEN - strlen(maprecord[i].value);
+		for (s=0; s<value_rest; s++) {
+			zeile = strcat(zeile, " ");
+		}
+		zeile = strcat(zeile, " |\n");
+	}
+	
+	printf("DB List: \n%s \n\n", zeile);
+	
+	munmap(maprecord, laenge);
+	return -42;
 }
 
 int main(int argc, char *argv[]) {
 	int schreib_fd;
 	int map_fd, laenge, i;
-	DBRecord test = {"key1", "cat1", "value toll"};
-	DBRecord test2 = {"key2 ist länger", "Kategoriename", "Values sind wirklich super!"};
+	DBRecord test = {"key1  sadas d a", "cat1", "value toll"};
+	DBRecord test2 = {"key2", "Kategoriename", "Values sind wirklich super!"};
 	DBRecord *maprecord;
 	DBRecord matchrecord = {"key1", "Kategoriename", "Toller Value"};
 	DBRecord *match = &matchrecord;
@@ -100,7 +152,7 @@ int main(int argc, char *argv[]) {
 	
 	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
 	
-	for (i=0; i<5; i++) {
+	for (i=0; i<(laenge/sizeof(DBRecord)); i++) {
 		printf("Key: %s, Cat: %s, Value: %s\n", maprecord[i].key, maprecord[i].cat, maprecord[i].value);
 	}
 	munmap(maprecord, laenge);
@@ -110,7 +162,10 @@ int main(int argc, char *argv[]) {
 	db_search("hier", 0, match);
 
 	/* DB-Eintrag zu Index ausgeben */
-	db_get("hier", 0, &index_result);
+	db_get("hier", 0, &index_result); 
+	
+	/* DB-List ausgeben */
+	db_list("hier", schreib_fd, 0,0);
 		
 	
 	return 0;

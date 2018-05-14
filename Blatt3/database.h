@@ -2,7 +2,7 @@
 #define DATABASE_H
 
 
-enum { DB_KEYLEN=20, DB_CATLEN=20, DB_VALLEN=255, BUFFSIZE=1000 };
+enum { DB_KEYLEN=20, DB_CATLEN=20, DB_VALLEN=255 };
 
 typedef struct dbrec {
     char key[DB_KEYLEN];     /* Schluessel */
