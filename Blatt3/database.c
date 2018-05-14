@@ -17,6 +17,16 @@ int speichern(int fd, DBRecord *dbr) {
 	return 0;
 }
 
+int match_filter(DBRecord *rec, const void *data) {
+	if (!strcmp(rec->key, data)) {
+		return 1;
+	}
+	if (!strcmp(rec->cat, data)) {
+		return 1;
+	}
+	return 0;
+}
+
 
 int db_search(const char *filepath, int start, DBRecord *record) {
 	/* returns index if successful, returns -1 if not found, -42 if not found */
@@ -31,7 +41,6 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	
 	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
 	
-	/* TODO: make loop run til end instead of for-loop */
 	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, maprecord[i].key)) {
 			printf("\n KEY Match: %s %s\n", record->key, maprecord[i].key);
@@ -89,30 +98,33 @@ int db_list(const char *path, int outfd,
 	
 	/* Format List */
 	for (i=0; i<data_count; i++) {
-		zeile = strcat(zeile, "| ");
-		/* Key */
-		zeile = strcat(zeile, maprecord[i].key);
-		key_rest = DB_KEYLEN - strlen(maprecord[i].key);
-		for (s=0; s<key_rest; s++) {
-			zeile = strcat(zeile, " ");
+		/* Wenn Filter-Regeln stimmen, dann mache folgendes: */
+		if (filter(&maprecord[i],data)) {
+			zeile = strcat(zeile, "| ");
+			/* Key */
+			zeile = strcat(zeile, maprecord[i].key);
+			key_rest = DB_KEYLEN - strlen(maprecord[i].key);
+			for (s=0; s<key_rest; s++) {
+				zeile = strcat(zeile, " ");
+			}
+			zeile = strcat(zeile, separator);
+			
+			/* Cat */
+			zeile = strcat(zeile, maprecord[i].cat);
+			cat_rest = DB_CATLEN - strlen(maprecord[i].cat);
+			for (s=0; s<cat_rest; s++) {
+				zeile = strcat(zeile, " ");
+			}
+			zeile = strcat(zeile, separator);
+			
+			/* Value */
+			zeile = strcat(zeile, maprecord[i].value);
+			value_rest = DB_VALLEN - strlen(maprecord[i].value);
+			for (s=0; s<value_rest; s++) {
+				zeile = strcat(zeile, " ");
+			}
+			zeile = strcat(zeile, " |\n");
 		}
-		zeile = strcat(zeile, separator);
-		
-		/* Cat */
-		zeile = strcat(zeile, maprecord[i].cat);
-		cat_rest = DB_CATLEN - strlen(maprecord[i].cat);
-		for (s=0; s<cat_rest; s++) {
-			zeile = strcat(zeile, " ");
-		}
-		zeile = strcat(zeile, separator);
-		
-		/* Value */
-		zeile = strcat(zeile, maprecord[i].value);
-		value_rest = DB_VALLEN - strlen(maprecord[i].value);
-		for (s=0; s<value_rest; s++) {
-			zeile = strcat(zeile, " ");
-		}
-		zeile = strcat(zeile, " |\n");
 	}
 	
 	printf("DB List: \n%s \n\n", zeile);
@@ -165,7 +177,7 @@ int main(int argc, char *argv[]) {
 	db_get("hier", 0, &index_result); 
 	
 	/* DB-List ausgeben */
-	db_list("hier", schreib_fd, 0,0);
+	db_list("hier", schreib_fd, match_filter,"cat1");
 		
 	
 	return 0;
