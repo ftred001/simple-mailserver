@@ -48,13 +48,16 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	
 	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, maprecord[i].key)) {
+            close(map_fd);
 			return i;
 		}
 		if (!strcmp(record->cat, maprecord[i].cat)) {
-			return i;
+			close(map_fd);
+            return i;
 		}
 	}
 	munmap(maprecord, laenge);
+    close(map_fd);
 	return -1;
 }
 
@@ -70,9 +73,11 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	strcpy(result->key, maprecord[index].key);
 	strcpy(result->cat, maprecord[index].cat);
 	strcpy(result->value, maprecord[index].value);
+    
+    close(fd);
 	
 	printf("=====GET Result=====\n %s %s %s\n\n", result->key, result->cat, result->value);
-
+    
 	return 0;
 }
 
@@ -129,6 +134,8 @@ int db_list(const char *path, int outfd,
 	printf("==========DB List:==========\n%s \n", zeile);
 	
 	munmap(maprecord, laenge);
+    close(in_fd);
+    
 	return -42;
 }
 
@@ -161,6 +168,7 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
     if (index >= data_count || index < 0) {
         printf("Index-Error DataCount: %ld Geforderter Index: %d\n", data_count, index);
         write(fd, record, sizeof(DBRecord));
+        close(fd);
         return 1;
     }
     
@@ -171,7 +179,7 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 	strcpy(maprecord[index].value,record->value);
 	
 	munmap(maprecord, laenge);
-	
+	close(fd);
 	return 1;
 }
 
