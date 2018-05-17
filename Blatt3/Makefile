@@ -1,8 +1,11 @@
-database: database.c
-	cc -g -ansi -pedantic -Wall database.c -o database
+CC = gcc
+CFLAGS = -g -ansi -pedantic -Wall
 	
-run: database
-	./database hier hier
+main: main.c database.c
+	$(CC) $(CFLAGS) -o main main.c database.c 
+
+run: main
+	./main dbname dbname
 	
 clean:
-	rm database
+	rm main
