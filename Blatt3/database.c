@@ -23,10 +23,10 @@ int match_filter(DBRecord *rec, const void *data) {
 		return 1;
 	}
 	
-	if (!strcmp(rec->key, data)) {
+	if (strstr(rec->key, data)) {
 		return 1;
 	}
-	if (!strcmp(rec->cat, data)) {
+	if (strstr(rec->cat, data)) {
 		return 1;
 	}
 	return 0;
@@ -50,17 +50,19 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, maprecord[i].key)) {
 			printf("Key-Match: %d\n\n",i);
+			munmap(maprecord, laenge);
+			close(map_fd);
 			return i;
 		}
 		if (!strcmp(record->cat, maprecord[i].cat)) {
 			printf("Cat-Match: %d\n\n",i);
+			munmap(maprecord, laenge);
+			close(map_fd);
 			return i;
 		}
 	}
 	munmap(maprecord, laenge);
-	
-
-	
+    close(map_fd);
 	return -1;
 }
 
@@ -76,9 +78,10 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	strcpy(result->key, maprecord[index].key);
 	strcpy(result->cat, maprecord[index].cat);
 	strcpy(result->value, maprecord[index].value);
+    
+    close(fd);
 	
 	printf("=====GET Result=====\n%s %s %s\n\n", result->key, result->cat, result->value);
-
 	return 0;
 }
 
@@ -135,23 +138,48 @@ int db_list(const char *path, int outfd,
 	printf("==========DB List:==========\n%s \n", zeile);
 	
 	munmap(maprecord, laenge);
+    close(in_fd);
+    
 	return -42;
 }
 
 int db_update(const char *filepath, const DBRecord *new) {
+<<<<<<< HEAD
 	/* TODO: IMPLEMENT */
+=======
+    /* fügt in die Datenbank filepath einen neuen Satz new
+ hinzu. Existiert bereits ein Satz mit den gleichen Werten für 
+key und cat, so wird dessen value aktualisiert (der Satz wird 
+überschrieben und behält seine Index-Nummer). Existiert die gegebene 
+key/cat-Kombination noch nicht in der Datenbank, so wird ein entsprechender neuer Satz hinten 
+angehängt. Rückgabewert ist in beiden Fällen die Index-Nummer des aktualisierten bzw. 
+hinzugefügten Satzes bzw. -1 im Fehlerfall. */
+
+    
+>>>>>>> 9366a02220167c146b4c0d1378994bac5adcd5eb
 	return -42;
 }
 
 int db_put(const char *filepath, int index, const DBRecord *record) {
 	int fd, laenge;
 	DBRecord *maprecord;
+    unsigned long data_count;
 	
 	printf("========PUT OPERATION========\n PUT RECORD %s in Index: %d \n\n", record->key, index);
 	
 	fd = open(filepath, O_RDWR, 0644);
 	laenge = lseek(fd, 0, SEEK_END);
 	
+    data_count = laenge/sizeof(DBRecord);
+    
+    
+    if (index >= data_count || index < 0) {
+        printf("Index-Error DataCount: %ld Geforderter Index: %d\n", data_count, index);
+        write(fd, record, sizeof(DBRecord));
+        close(fd);
+        return 1;
+    }
+    
 	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	
 	strcpy(maprecord[index].key, record->key);
@@ -159,7 +187,7 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 	strcpy(maprecord[index].value,record->value);
 	
 	munmap(maprecord, laenge);
-	
+	close(fd);
 	return 1;
 }
 
@@ -198,10 +226,11 @@ int main(int argc, char *argv[]) {
 	
 	search_result = db_search(filepath, 0, &such_record);
 	db_get(filepath, search_result, &index_result);
+
 	db_list(filepath, schreib_fd, match_filter,"");
 	
 
-	db_put(filepath, 3, &replace_record);
+	db_put(filepath, -1, &replace_record);
 	db_list(filepath, schreib_fd, match_filter,"");
 	
 	return 0;
