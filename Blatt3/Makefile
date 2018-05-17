@@ -5,7 +5,7 @@ main: main.c database.c
 	$(CC) $(CFLAGS) -o main main.c database.c 
 
 run: main
-	./main dbname dbname
+	./main
 	
 clean:
 	rm main

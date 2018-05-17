@@ -39,9 +39,9 @@ int test(char *filepath) {
 	DBRecord replace_record = {"key_ersatz", "Kategorieersatz", "Neuer Wert"};
 	const DBRecord update_record = {"key1", "cat1", "Dieser Value ist noch viel toller als der vorherige"};
 	DBRecord index_result;
-	int schreib_fd;
+	int outfd;
 	
-	schreib_fd = open(filepath, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+	outfd = open(filepath, O_WRONLY|O_TRUNC|O_CREAT, 0644);
 	
 	db_get(filepath, 17, &index_result);
 	
@@ -50,29 +50,64 @@ int test(char *filepath) {
 	
 	db_get(filepath, search_result, &index_result);
 
-	db_list(filepath, schreib_fd, match_filter,"key");
+	db_list(filepath, outfd, match_filter,"key");
 	
 
 	db_put(filepath, -1, &replace_record);
-	db_list(filepath, schreib_fd, match_filter,"");
+	db_list(filepath, outfd, match_filter,"");
 	
 	db_update(filepath, &update_record);
-	db_list(filepath, schreib_fd, match_filter, "");
+	db_list(filepath, outfd, match_filter, "");
 	
 	db_del(filepath, 5);
-	db_list(filepath, schreib_fd, match_filter, "");
+	db_list(filepath, outfd, match_filter, "");
 	return 1;
 }
 
 int main(int argc, char *argv[]) {
-	char *filepath;
+	char *filepath = "fischfile.dat";
+	int fd;
+	char *std_aquarium = "Gruppenaquarium";
+	int outfd = 1;
+	DBRecord rec;
 	
-	if (argc!=3) { printf("Falscher Aufruf\n"); exit(1); }
 	
-	filepath = argv[2];
+	fd = open(filepath, O_RDONLY|O_CREAT,0644);
+	close(fd);
+
 	
-	create_testdata(filepath);
-	test(filepath);
+	if (argc == 2) {
+		if (!strcmp(argv[1], "list")) {	db_list(filepath, outfd, match_filter,""); }
+	}
+	
+	if (argc == 3) {
+		if (!strcmp(argv[1], "list")) db_list(filepath, outfd, match_filter,argv[2]); 
+		if (!strcmp(argv[1], "search")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[2]);
+			db_search(filepath, 0, &rec);
+		}
+	}
+	
+	if (argc == 4) {
+		if (!strcmp(argv[1], "add")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[3]);
+			strcpy(rec.value,std_aquarium);
+			db_put(filepath, -1, &rec);
+		}
+	}
+	
+	if (argc == 5) {
+		if (!strcmp(argv[1], "add")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[3]);
+			strcpy(rec.value,argv[4]);
+			db_put(filepath, -1, &rec);
+		}
+	}
+	
+	
 	
 	return 0;
 }
