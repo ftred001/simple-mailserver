@@ -66,7 +66,7 @@ int test(char *filepath) {
 
 int main(int argc, char *argv[]) {
 	char *filepath = "fischfile.dat";
-	int fd;
+	int fd, search_result;
 	char *std_aquarium = "Gruppenaquarium";
 	int outfd = 1;
 	DBRecord rec;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
 		if (!strcmp(argv[1], "search")) {
 			strcpy(rec.key,argv[2]);
 			strcpy(rec.cat,argv[2]);
-			db_search(filepath, 0, &rec);
+			db_list(filepath, outfd, match_filter, &rec);
 		}
 	}
 	
@@ -96,6 +96,22 @@ int main(int argc, char *argv[]) {
 			strcpy(rec.value,std_aquarium);
 			db_put(filepath, -1, &rec);
 		}
+        
+        if (!strcmp(argv[1], "update")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.value,argv[3]);
+			db_update(filepath, &rec);
+		}
+        
+        if (!strcmp(argv[1], "delete")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[3]);
+            
+            /* Suche Fisch. Danach lösche ihn. */
+            search_result = db_search(filepath, 0, &rec);
+			db_del(filepath, search_result);
+		}
+        
 	}
 	
 	if (argc == 5) {

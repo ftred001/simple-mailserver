@@ -41,11 +41,16 @@ int db_list(const char *path, int outfd,
 	DBRecord *record_map;
 	char *zeile = malloc(sizeof(DBRecord)+ 8);
 	char *separator = "|";
-	int filter_res;
+	int filter_res = 2;
 	zeile  = strcpy(zeile,"");
 	
 	in_fd = open(path, O_RDONLY);
 	file_length = lseek(in_fd,0, SEEK_END);
+    
+    if (file_length == 0) {
+        close(in_fd);
+        return -42;
+    }
 	
 	data_count = file_length / sizeof(DBRecord);
 	
@@ -104,29 +109,26 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	unsigned long data_count;
 	DBRecord *record_map;
 	
-	map_fd = open(filepath, O_RDWR, 0644);
+	map_fd = open(filepath, O_RDONLY, 0644);
 	file_length = lseek(map_fd, 0, SEEK_END);
 	
 	data_count = file_length / sizeof(DBRecord);
 	
 	record_map = mmap(0,file_length, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
-	printf("=====SEARCH RESULT Key: %s OR Cat: %s=====\n", record->key, record->cat);
 
 	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, record_map[i].key)) {
-			printf("Key-Match in Index: %d\n\n",i);
 			munmap(record_map, file_length);
 			close(map_fd);
 			return i;
 		}
 		if (!strcmp(record->cat, record_map[i].cat)) {
-			printf("Cat-Match in Index: %d\n\n",i);
 			munmap(record_map, file_length);
 			close(map_fd);
 			return i;
 		}
 	}
-	printf("Error: No Match for Key OR Cat\n\n");
+    
 	munmap(record_map, file_length);
     close(map_fd);
 	return -1;
@@ -137,7 +139,7 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	unsigned long data_count;
 	DBRecord *record_map;
 	
-	fd = open(filepath, O_RDWR, 0644);
+	fd = open(filepath, O_RDONLY, 0644);
 	file_length = lseek(fd, 0, SEEK_END);
 	data_count = file_length / sizeof(DBRecord);
 	
@@ -166,7 +168,7 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 	DBRecord *record_map;
     unsigned long data_count;
 	
-	printf("========PUT OPERATION========\nPUT RECORD %s in Index: %d \n\n", record->key, index);
+	printf("========PUT OPERATION========\n\n");
 	
 	fd = open(filepath, O_RDWR, 0644);
 	file_length = lseek(fd, 0, SEEK_END);
@@ -175,7 +177,7 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
     
     
     if (index >= data_count || index < 0) {
-        printf("Index-Error DataCount: %ld Geforderter Index: %d\n", data_count, index);
+        printf("CREATE NEW RECORD (Index: %lu)\n\n", data_count);
         write(fd, record, sizeof(DBRecord));
         close(fd);
         return 1;
@@ -186,6 +188,8 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 	strcpy(record_map[index].key, record->key);
 	strcpy(record_map[index].cat, record->cat);
 	strcpy(record_map[index].value,record->value);
+    
+    printf("UPDATE RECORD (Index: %d)", index);
 	
 	munmap(record_map, file_length);
 	close(fd);
@@ -195,6 +199,8 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 int db_update(const char *filepath, const DBRecord *new) {
 	int search_result, index=-1;
 	DBRecord *copy = calloc(0,sizeof(DBRecord));
+    
+    printf("======UPDATE======\n");
 	
 	strcpy(copy->key, new->key);
 	strcpy(copy->cat, new->cat);
@@ -203,7 +209,7 @@ int db_update(const char *filepath, const DBRecord *new) {
 	
     search_result = db_search(filepath, 0, copy);
     
-    if (search_result != 42) {
+    if (search_result != -42) {
 		db_put(filepath, search_result, copy);
 			
 	}
