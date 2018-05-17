@@ -45,16 +45,22 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	data_count = laenge / sizeof(DBRecord);
 	
 	maprecord = mmap(0,laenge, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
-	
+	printf("=====SEARCH RESULT Key: %s OR Cat: %s=====\n", record->key, record->cat);
+
 	for (i=0; i<data_count; i++) {
 		if (!strcmp(record->key, maprecord[i].key)) {
+			printf("Key-Match: %d\n\n",i);
 			return i;
 		}
 		if (!strcmp(record->cat, maprecord[i].cat)) {
+			printf("Cat-Match: %d\n\n",i);
 			return i;
 		}
 	}
 	munmap(maprecord, laenge);
+	
+
+	
 	return -1;
 }
 
@@ -71,7 +77,7 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	strcpy(result->cat, maprecord[index].cat);
 	strcpy(result->value, maprecord[index].value);
 	
-	printf("=====GET Result=====\n %s %s %s\n\n", result->key, result->cat, result->value);
+	printf("=====GET Result=====\n%s %s %s\n\n", result->key, result->cat, result->value);
 
 	return 0;
 }
@@ -133,6 +139,7 @@ int db_list(const char *path, int outfd,
 }
 
 int db_update(const char *filepath, const DBRecord *new) {
+	/* TODO: IMPLEMENT */
 	return -42;
 }
 
@@ -157,8 +164,8 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 }
 
 int db_del(const char *filepath, int index) {
-
-return -42;
+	/* TODO: IMPLEMENT */
+	return -42;
 }
 
 int main(int argc, char *argv[]) {
@@ -190,8 +197,7 @@ int main(int argc, char *argv[]) {
 	
 	
 	search_result = db_search(filepath, 0, &such_record);
-	printf("=====SEARCH RESULT=====\nIndex: %d\n==========\n\n", search_result);
-	db_get(filepath, 0, &index_result);
+	db_get(filepath, search_result, &index_result);
 	db_list(filepath, schreib_fd, match_filter,"");
 	
 
