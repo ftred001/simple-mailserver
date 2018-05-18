@@ -11,6 +11,35 @@
 int speichern(int fd, DBRecord *dbr);
 int match_filter(DBRecord *rec, const void *data);
 
+
+int key_filter(DBRecord *rec, const void *data) {
+    if (strstr(rec->key, data)) {
+		return 1;
+	}
+    return 0;
+}
+
+int cat_filter(DBRecord *rec, const void *data) {
+    if (strstr(rec->cat, data)) {
+		return 1;
+	}
+    return 0;
+}
+
+int match_filter(DBRecord *rec, const void *data) {
+	if (strlen(data) == 0) {
+		return 2;
+	}
+	
+	if (strstr(rec->key, data)) {
+		return 1;
+	}
+	if (strstr(rec->cat, data)) {
+		return 1;
+	}
+	return 0;
+}
+
 void create_testdata(char *filepath) {
 	int fd;
 	/* Schreibe Testdaten in Datei */
@@ -81,11 +110,28 @@ int main(int argc, char *argv[]) {
 	}
 	
 	if (argc == 3) {
-		if (!strcmp(argv[1], "list")) db_list(filepath, outfd, match_filter,argv[2]); 
+        /* Owner Filter */
+		if (!strcmp(argv[1], "list")) {
+            db_list(filepath, outfd, key_filter,argv[2]); 
+        }
+        
+        /* Fischname Filter */
+		if (!strcmp(argv[1], "clist")) {
+            db_list(filepath, outfd, cat_filter,argv[2]); 
+        }
+        
+        /* Suche: Besitzer oder Fischname */
 		if (!strcmp(argv[1], "search")) {
 			strcpy(rec.key,argv[2]);
 			strcpy(rec.cat,argv[2]);
 			db_list(filepath, outfd, match_filter, &rec);
+		}
+        
+        if (!strcmp(argv[1], "delete")) {
+			strcpy(rec.key,argv[2]);
+            while ((search_result = db_get(filepath, 0, &rec))) {
+                db_del(filepath, search_result);
+            }
 		}
 	}
 	
@@ -108,8 +154,9 @@ int main(int argc, char *argv[]) {
 			strcpy(rec.cat,argv[3]);
             
             /* Suche Fisch. Danach lösche ihn. */
-            search_result = db_search(filepath, 0, &rec);
-			db_del(filepath, search_result);
+            if ((search_result = db_get(filepath, 0, &rec))) {
+                db_del(filepath, search_result);
+            }
 		}
         
 	}

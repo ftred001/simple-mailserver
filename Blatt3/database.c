@@ -18,20 +18,6 @@ int speichern(int fd, DBRecord *dbr) {
 	return 0;
 }
 
-int match_filter(DBRecord *rec, const void *data) {
-	if (strlen(data) == 0) {
-		return 2;
-	}
-	
-	if (strstr(rec->key, data)) {
-		return 1;
-	}
-	if (strstr(rec->cat, data)) {
-		return 1;
-	}
-	return 0;
-}
-
 int db_list(const char *path, int outfd, 
   int (*filter)(DBRecord *rec, const void *data), const void *data) {
 	/* TODO: Fehlerfälle einarbeiten. */
@@ -102,7 +88,7 @@ int db_list(const char *path, int outfd,
 	return -1;
 }
 
-
+/* Sucht Inhalt ab Offset und gibt Index zurück. */
 int db_search(const char *filepath, int start, DBRecord *record) {
 	/* TODO: Fehlerfall einarbeiten -> return -42 */
 	int map_fd, file_length, i;
@@ -134,6 +120,7 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	return -1;
 }
 
+/* Schreibt Inhalte in result-Pointer */
 int db_get(const char *filepath, int index, DBRecord *result) {
 	int fd, file_length;
 	unsigned long data_count;
@@ -163,6 +150,7 @@ int db_get(const char *filepath, int index, DBRecord *result) {
 	return 0;
 }
 
+/* Schreibt Datensatz an Indexstelle oder Ende. */
 int db_put(const char *filepath, int index, const DBRecord *record) {
 	int fd, file_length;
 	DBRecord *record_map;
@@ -196,6 +184,7 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 	return 1;
 }
 
+/* Aktualisiert Value von gefundenem Datensatz oder fügt Datensatz ein. */
 int db_update(const char *filepath, const DBRecord *new) {
 	int search_result, index=-1;
 	DBRecord *copy = calloc(0,sizeof(DBRecord));
@@ -211,7 +200,6 @@ int db_update(const char *filepath, const DBRecord *new) {
     
     if (search_result != -42) {
 		db_put(filepath, search_result, copy);
-			
 	}
         
 	return index;
