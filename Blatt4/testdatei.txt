@@ -1,4 +1,3 @@
-Das ist eine Testdatei
-Sie hat mindestens zwei Zeilenumbrüche
-
-Hier ist noch ein Text.
+ABC
+123
+456

@@ -18,60 +18,88 @@ LineBuffer *buf_new(int descriptor, const char *linesep) {
 void buf_dispose(LineBuffer *lb) {
 	free(lb);
 	lb = NULL;
-}
-
-int buf_readline(LineBuffer *b, char *line, int linemax) {
-	int gelesen;
-	char *wort;
-	
-	printf("Lese Datei für Filedescriptor: %d\n", b->descriptor);
-	
-	while(1) {
-		gelesen = read(b->descriptor, b->buffer, linemax);
-		if (gelesen == 0) {
-			break;
-		} else if (gelesen <0) {
-			perror("Lesefehler\n");
-			break;
-		}
-		printf("Gelesen: %s\n", b->buffer);
-		wort = b->buffer;
-		b->end = strlen(b->buffer);
-		b->bytesread += b->end;
-		printf("Bytes read: %d HERE: %d END: %d\n", b->bytesread, b->here, b->end);
-		
-		while (*wort) {
-			if (!strncmp(wort,b->linesep, b->lineseplen)) {
-				printf("Zeilenumbruch an Stelle: %d\n", b->here);
-			}
-			b->here++;
-			wort++;
-		}
-	
-	}
-	
-	return 1;
+	printf("-----LineBuffer disposed-----\n");
 }
 
 void print_buffer(LineBuffer *lb) {
-	printf("Descriptor: %d Separator-Length: %d\n",lb->descriptor, lb->lineseplen);
+	printf("\n-----LINEBUFFER-----\n");
+	printf("Descriptor: %d\n",lb->descriptor);
+	if (!strcmp("\r\n", lb->linesep)) {
+		printf("Separator: \\r\\n Length: %d\n", lb->lineseplen);
+	}
+	
+	if (!strcmp("\n", lb->linesep)) {
+		printf("Separator: \\n Length: %d\n", lb->lineseplen);
+	}
+
+	if (!strcmp("\r", lb->linesep)) {
+		printf("Separator: \\r Length: %d\n", lb->lineseplen);
+	}
+	
+	printf("Buffer: %s\n", lb->buffer);
+
+	printf("bytesread %u | here: %u | end: %u\n", lb->bytesread, lb->here, lb->end);
+	printf("---LINEBUFFER END---\n\n");
+}
+
+
+int buf_readline(LineBuffer *b, char *line, int linemax) {
+	
+	/* Wenn ich am Anfang oder Ende der Zeile bin, lese ich eine neue Zeile ein. */
+	if (b->here == b->end) {
+		b->end = read(b->descriptor, b->buffer, linemax);
+		if (b->end == 0) {
+			/* Dateiende */
+			return 0;
+		} else if (b->end <0) {
+			perror("Lesefehler\n");
+			return -1;
+		}	
+		b->bytesread += b->end;
+	}
+	
+	/* Suche Zeilenumbruch und gib Position zurück */
+	while (b->here < b->end) {
+		b->here++;
+		if (!strncmp(b->buffer+b->here,b->linesep, b->lineseplen)) {
+			printf("ZEILENUMBRUCH GEFUNDEN an Stelle: %u!\n",b->here);
+			return b->here;
+		}
+	}
+	
+	/* Eingabeende */
+	return b->here;
+}
+
+
+
+int buf_where(LineBuffer *b) {
+	return 0;
 }
 
 int main(int argc, char *argv[]) {
-	const char *line_separator = "\n";
+	const char *line_separator = "\r\n";
 	char *line = calloc(0, LINEBUFFERSIZE);
 	LineBuffer *lbuffer;
 	int fd;
 	
-	printf("Lese folgende Datei ein: %s\n", argv[1]);
+	printf("Lese folgende Datei ein: %s\n\n", argv[1]);
 	
 	fd = open(argv[1], O_RDONLY, 0644);
 	
 	lbuffer = buf_new(fd, line_separator);
 	
+
+	
+	buf_readline(lbuffer, line, LINEBUFFERSIZE);
 	print_buffer(lbuffer);
 	
 	buf_readline(lbuffer, line, LINEBUFFERSIZE);
+	print_buffer(lbuffer);
+	
+	buf_readline(lbuffer, line, LINEBUFFERSIZE);
+	print_buffer(lbuffer);
+
 	
 	buf_dispose(lbuffer);
 	
