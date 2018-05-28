@@ -40,14 +40,6 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 		b->bytesread += b->end;
 		printf("Bytes read: %d HERE: %d END: %d\n", b->bytesread, b->here, b->end);
 		
-		/* finde Zeilenumbruch 
-		while (b->here < b->end) {
-			if (strncmp(b->buffer,b->linesep)) {
-				printf("Zeilenumbruch an Pos: %d\n", b->here);
-			}
-			b->here++;
-		} */
-		
 		while (*wort) {
 			if (!strncmp(wort,b->linesep, b->lineseplen)) {
 				printf("Zeilenumbruch an Stelle: %d\n", b->here);
