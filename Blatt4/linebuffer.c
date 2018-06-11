@@ -7,6 +7,14 @@
 #include <errno.h>
 #include "linebuffer.h"
 
+/*
+ * To Test: buf_dispose(LineBuffer lb) wirklich freigegeben? 
+ * To Test: buf_readline() Wird richtige POS returned?
+ * To Test: buf_readline() Zwei Zeichen (Zeilenende/-anfang) verarbeiten.
+ * To Test: buf_where() Prüfen ob korrekt.
+ * To Test: buf_seek() Testen ob richtig verschoben wird.
+ */
+
 LineBuffer *buf_new(int descriptor, const char *linesep) {
 	LineBuffer *lb;
 	lb = calloc(0,sizeof(LineBuffer));
@@ -38,6 +46,12 @@ void print_buffer(LineBuffer *lb) {
 
 
 int buf_readline(LineBuffer *b, char *line, int linemax) {
+	/* 
+	 * return -1 bei EOF
+	 * return OFFSETPOSITION des Bytestroms (in der Datei)
+	 * ohne lseek?
+	 * todo: Zeilentrenner CL RF über verschiedenen lines zulassen/merken
+	 * */
 	
 	/* Wenn ich am Anfang oder Ende der Zeile bin, lese ich eine neue Zeile ein. */
 	if (b->here == b->end) {
@@ -57,6 +71,9 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 	/* Suche Zeilenumbruch und gib Position zurück */
 	while (b->here < b->end) {
 		b->here++;
+		
+		/* TO DO: Ersten Teil des LineSeparators testen. Wenn enthalten und am ZeilenEnde dann merken.*/
+		/* NOCH: Vergleicht mit komplettem Separator. */
 		if (!strncmp(b->buffer+b->here,b->linesep, b->lineseplen)) {
 			return b->here;
 		}
@@ -67,7 +84,7 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 }
 
 
-
+/* Gibt Position des Bytestroms zurück */
 int buf_where(LineBuffer *b) {
 	return b->bytesread -b->end + b->here;
 }
