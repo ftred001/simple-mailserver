@@ -18,7 +18,7 @@ typedef struct fi
   const char *filepath;     /* Dateipfad der zugehoerigen Datei */
   FileIndexEntry *entries;  /* Liste der Abschnittsbeschreibungen */
   int nEntries;             /* Gesamtanzahl Abschnitte */
-  int totalSize;            /* Summe der size-Werte aller Abschnitte */
+  int totalSize;            /* Summe der size-Werte aller Abschnitte in BYTE */
 } FileIndex;
 
 
