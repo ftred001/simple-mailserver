@@ -1,4 +1,21 @@
+#include "fileindex.h"
+#include "linebuffer.h"
+
+#include <fcntl.h> /* open() */
+#include <unistd.h> /* read, write, close */
+#include <sys/types.h> /* lseek */
+#include <errno.h>
+
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
+
+
+
 
 /* Ziel:
  * Betrachtete Textdatei in indexierbare Abschnitte einteilen.
@@ -15,7 +32,30 @@
  * return Zeiger auf FileIndex wenn okay
  * return NULL bei Fehler
  * */
-FileIndex *fi_new(const char *filepath, const char *separator);
+FileIndex *fi_new(const char *filepath, const char *separator) {
+	FileIndex *findex = calloc(sizeof(FileIndex), 0);
+	char *line = calloc(0, LINEBUFFERSIZE);
+	LineBuffer *lbuffer;
+	int fd;
+	
+	findex->filepath = filepath;
+	
+	fd = open(filepath, O_RDONLY, 0644);
+	
+	lbuffer = buf_new(fd, separator);
+	
+	/* FIEntry für jeden Abschnitt. */
+	while (buf_readline(lbuffer, line, LINEBUFFERSIZE)) {
+		 print_pos(lbuffer);
+	} 
+	
+	buf_dispose(lbuffer);
+	
+	close(fd);
+	
+	return findex;
+	
+}
 
 /* Gibt Speicher für FileIndex-Struct frei
  * ACHTUNG: INKLUSIVE Liste der FileIndex Knoten 
@@ -36,6 +76,16 @@ FileIndexEntry *fi_find(FileIndex *fi, int n);
 int fi_compactify(FileIndex *fi);
 
 
-int main(void) {
+int main(int argc, char *argv[]) {
+	FileIndex *findex;
+	const char *line_separator = ".\r\n";
+
+	
+	printf("Lese folgende Datei ein: %s\n\n", argv[1]);
+	
+	findex = fi_new(argv[1], line_separator);
+	
+	
+	
 	return 0;
 }

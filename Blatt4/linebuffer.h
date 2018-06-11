@@ -24,4 +24,8 @@ int buf_where(LineBuffer *b);
 
 int buf_seek(LineBuffer *b, int seekpos);
 
+void print_buffer(LineBuffer *lb); /* Zeigt den Buffer */
+
+void print_pos(LineBuffer *b); /* Printet Position */
+
 #endif

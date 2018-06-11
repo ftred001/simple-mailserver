@@ -14,6 +14,8 @@
  * To Test: buf_where() Prüfen ob korrekt.
  * To Test: buf_seek() Testen ob richtig verschoben wird.
  */
+ 
+
 
 LineBuffer *buf_new(int descriptor, const char *linesep) {
 	LineBuffer *lb;
@@ -102,8 +104,9 @@ void print_pos(LineBuffer *b) {
 	printf("Aktuelle Byteposition: %d\n", buf_where(b));
 }
 
+/*
 int main(int argc, char *argv[]) {
-	const char *line_separator = "\n";
+	const char *line_separator = ".\r\n";
 	char *line = calloc(0, LINEBUFFERSIZE);
 	LineBuffer *lbuffer;
 	int fd;
@@ -125,4 +128,4 @@ int main(int argc, char *argv[]) {
 	close(fd);
 	
 	return 0;
-}
+} */

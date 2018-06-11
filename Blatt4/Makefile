@@ -1,8 +1,12 @@
-linebuffer: linebuffer.c
-	cc -g -ansi -pedantic -Wall linebuffer.c -o linebuffer
+CC = gcc
+CFLAGS = -g -ansi -pedantic -Wall
 	
-run: linebuffer
-	./linebuffer testdatei.txt
-	
+fileindex: fileindex.c linebuffer.c
+	$(CC) $(CFLAGS) -o fileindex fileindex.c linebuffer.c 
+
+run: fileindex
+	./fileindex joendhard.mbox
+
+
 clean:
-	rm linebuffer
+	rm fileindex

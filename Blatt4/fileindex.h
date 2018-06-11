@@ -5,7 +5,7 @@
 
 typedef struct fie
 {
-  struct fie *next;
+  struct fie *next;		/* Pointer zum nächsten FIEntry */
   int seekpos;          /* lseek()-Position des ersten Inhalts-Bytes des Abschnitts */
   int size;             /* Groesse des Abschnitt-Inhalts in Bytes, incl. Zeilentrenner */
   int lines;            /* Anzahl Inhalts-Zeilen im Abschnitt */
