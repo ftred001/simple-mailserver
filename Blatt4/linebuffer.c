@@ -46,6 +46,7 @@ void print_buffer(LineBuffer *lb) {
 
 
 int buf_readline(LineBuffer *b, char *line, int linemax) {
+	int i;
 	/* 
 	 * return -1 bei EOF
 	 * return OFFSETPOSITION des Bytestroms (in der Datei)
@@ -66,24 +67,27 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 		}	
 		b->bytesread += b->end;
 		b->here = 0;
+		printf("RESET Buffer || here: %d end: %d\n", b->here, b->end);
+	} else if (b->here > b->end) {
+		printf("HERE IST GROESSER ALS END!\n");
 	}
+	
 	
 	/* Suche Zeilenumbruch und gib Position zurück */
 	while (b->here < b->end) {
-		b->here++;
-		
 		/* TO DO: Ersten Teil des LineSeparators testen. Wenn enthalten und am ZeilenEnde dann merken.*/
 		/* NOCH: Vergleicht mit komplettem Separator. */
-		if (!strncmp(b->buffer+b->here-1,b->linesep, b->lineseplen)) {
-			printf("here: %d buf_where %d", b->here, buf_where(b));
-			return b->here-1;
+		if (!strncmp(b->buffer+b->here,b->linesep, b->lineseplen)) {
+			printf("Match gefunden bei: %d\n", b->bytesread+b->here);
+			printf("Restbuffer: %s HERE: %d\n", b->buffer+b->here, b->here);
+			return b->here++;
 		}
-		
+		b->here++;
 		
 	}
 	
-	/* Eingabeende */
-	return -1;
+	/* Line-Ende */
+	return -2;
 }
 
 

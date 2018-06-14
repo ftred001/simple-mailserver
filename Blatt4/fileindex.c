@@ -46,8 +46,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	lbuffer = buf_new(fd, separator);
 	
 	/* FIEntry für jeden Abschnitt. */
-	while ((umbruch = buf_readline(lbuffer, line, LINEBUFFERSIZE)) != -1) {
-		 printf("LINE SEP POS: %d\n", umbruch);
+	while (buf_readline(lbuffer, line, LINEBUFFERSIZE) !=-1) {
+		 printf("LINE SEP POS: %d\n", lbuffer->here + lbuffer->bytesread);
 	} 
 
 	
