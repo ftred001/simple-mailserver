@@ -41,8 +41,6 @@ void print_buffer(LineBuffer *lb) {
 	if (!strcmp("\r", lb->linesep)) printf("Separator: \\r Length: %d\n", lb->lineseplen);
 	
 	printf("IM BUFFER: %s\n", lb->buffer);
-
-
 	printf("---LINEBUFFER END---\n\n");
 }
 
@@ -55,13 +53,13 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 	 * todo: Zeilentrenner CL RF über verschiedenen lines zulassen/merken
 	 * */
 	
-	/* Wenn ich am Anfang oder Ende der Zeile bin, lese ich eine neue Zeile ein. */
+	/* Wenn ich am Anfang oder Ende der LINE bin, lese ich eine neue LINE ein. */
 	if (b->here == b->end) {
 		b->end = read(b->descriptor, b->buffer, linemax);
 		if (b->end == 0) {
 			/* Dateiende */
 			printf("---END OF FILE---\n\n");
-			return 0;
+			return -1;
 		} else if (b->end <0) {
 			perror("Lesefehler\n");
 			return -42;
@@ -76,9 +74,12 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 		
 		/* TO DO: Ersten Teil des LineSeparators testen. Wenn enthalten und am ZeilenEnde dann merken.*/
 		/* NOCH: Vergleicht mit komplettem Separator. */
-		if (!strncmp(b->buffer+b->here,b->linesep, b->lineseplen)) {
-			return b->here;
+		if (!strncmp(b->buffer+b->here-1,b->linesep, b->lineseplen)) {
+			printf("here: %d buf_where %d", b->here, buf_where(b));
+			return b->here-1;
 		}
+		
+		
 	}
 	
 	/* Eingabeende */
