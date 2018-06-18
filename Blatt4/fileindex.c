@@ -47,8 +47,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(lbuffer, line, LINEBUFFERSIZE)) !=-1) {
-		 if (umbruch > 0) {
-			 printf("LINESTARTPOS: %d\n", buf_where(lbuffer));
+		 if (umbruch >= 0) {
+			 printf("%d \n", buf_where(lbuffer));
 		}
 	} 
 
