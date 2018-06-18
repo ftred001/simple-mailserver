@@ -34,7 +34,7 @@
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
 	FileIndex *findex = calloc(sizeof(FileIndex), 0);
-	char *line = calloc(LINEBUFFERSIZE, sizeof(char));
+	char *line = calloc(1024, sizeof(char));
 	LineBuffer *lbuffer;
 	int fd, umbruch=0;
 	
@@ -48,7 +48,7 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(lbuffer, line, LINEBUFFERSIZE)) !=-1) {
 		 if (umbruch >= 0) {
-			 printf("%d \n", buf_where(lbuffer));
+			 printf("%d %s\n", buf_where(lbuffer), line);
 		}
 	} 
 

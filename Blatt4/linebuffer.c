@@ -51,6 +51,8 @@ void fill_buffer(LineBuffer *b, char *line, int linemax) {
 
 int buf_readline(LineBuffer *b, char *line, int linemax) {
 	int hit_index=0;
+	int li=0;
+	int i;
 	
 	/* Wenn ich am Anfang oder Ende der LINE bin, lese ich eine neue LINE ein. */
 	if (b->here == b->end) {
@@ -70,6 +72,7 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 	
 	/* Suche Zeilenumbruch und gib Zeilenanfang zurück */
 	while (b->here < b->end) {
+		line[li] =  b->buffer[b->here];
 		/* Finde Vorkommen des LineSeparators */
 		if (b->buffer[b->here] == b->linesep[hit_index]) {
 			hit_index++;
@@ -85,21 +88,22 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 				}	
 				b->bytesread += b->end;
 				b->here = 0;
-				
 				b->here--;
 			}
-			
 		} else {
 			hit_index = 0;
 		}
 		
 		/* Gehe weiter */
 		b->here++;
+		li++;
 		
 		/* Wenn Lineseparator komplett ist: */
 		if (hit_index == b->lineseplen) {
-			/* printf("VOLLTREFFER: %d %d %d\n", b->here, b->bytesread, LINEBUFFERSIZE);
-			*/
+			for (i=0;i<=b->lineseplen; i++) {
+				line[li-i] = '\0';
+			}
+			
 			return b->here+b->bytesread;
 		}
 	}
