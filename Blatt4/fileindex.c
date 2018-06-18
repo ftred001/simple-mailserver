@@ -22,11 +22,15 @@
  * 
  * Jeder Abschnitt enthält eine SEPARATORZEILE, die NICHT zum Inhalt gehört.
  * ACHTUNG: Leerzeilen gehören zum Inhalt.
- * 
- * 
- * 
  *  */
  
+ FileIndexEntry *new_entry(int nr) {
+	FileIndexEntry *entry = calloc(sizeof(FileIndexEntry), 0);
+	
+	entry->nr = nr;
+	
+	return entry;
+}
  
 /* Indiziert angegebene Datei filepath. Trennzeilen sind wie SEPARATOR und gehören NICHT zum Inhalt
  * return Zeiger auf FileIndex wenn okay
@@ -34,26 +38,54 @@
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
 	FileIndex *findex = calloc(sizeof(FileIndex), 0);
+	FileIndexEntry *entry;
 	char *line = calloc(1024, sizeof(char));
-	LineBuffer *lbuffer;
-	int fd, umbruch=0;
+	LineBuffer *b;
+	int fd, umbruch=0, offsetpos=0;
+	int is_head=0;
 	
 	
 	findex->filepath = filepath;
 	
 	fd = open(filepath, O_RDONLY, 0644);
 	
-	lbuffer = buf_new(fd, separator);
+	b = buf_new(fd, separator);
 	
 	/* FIEntry für jeden Abschnitt. */
-	while ((umbruch = buf_readline(lbuffer, line, LINEBUFFERSIZE)) !=-1) {
+	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
 		 if (umbruch >= 0) {
-			 printf("%d %s\n", buf_where(lbuffer), line);
+			/* Sektionsanfang */
+			if (!strncmp(line, "From ", 5)) {
+				/* Merke alten Entry */
+				/* Erstelle neuen Entry */
+				/* Lass alten Entry auf neuen Entry zeigen */
+				findex->nEntries++;
+				entry = new_entry(findex->nEntries);
+				is_head = 1;
+				printf("%d ", buf_where(b));
+				printf("SECTION ANFANG %s\n", line);
+				
+			}
+			
+			if (entry->nr && is_head == 0) {
+				entry->lines++;
+				entry->size += strlen(line) + b->lineseplen;
+			}
+			
+			/* Erste Leerzeile finden -> HEAD Ende */
+			if (!strcmp(line, "") && is_head) {
+				printf("%d LEER\n", buf_where(b));
+				entry->seekpos = buf_where(b)+b->lineseplen;
+				is_head = 0;
+			}
+			 
 		}
 	} 
+	
+	printf("ENTRY #%d Size: %d Lines %d\n",entry->nr,entry->size,entry->lines);
 
 	
-	buf_dispose(lbuffer);
+	buf_dispose(b);
 	
 	close(fd);
 	
@@ -82,7 +114,7 @@ int fi_compactify(FileIndex *fi);
 
 int main(int argc, char *argv[]) {
 	FileIndex *findex;
-	const char *line_separator = "\r\n";
+	const char *line_separator = "\n";
 
 	
 	printf("Lese folgende Datei ein: %s\n\n", argv[1]);
