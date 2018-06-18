@@ -34,10 +34,10 @@
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
 	FileIndex *findex = calloc(sizeof(FileIndex), 0);
-	char *line = calloc(0, LINEBUFFERSIZE);
+	char *line = calloc(LINEBUFFERSIZE, sizeof(char));
 	LineBuffer *lbuffer;
-	int fd;
-	int umbruch;
+	int fd, umbruch=0;
+	
 	
 	findex->filepath = filepath;
 	
@@ -46,8 +46,10 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	lbuffer = buf_new(fd, separator);
 	
 	/* FIEntry für jeden Abschnitt. */
-	while (buf_readline(lbuffer, line, LINEBUFFERSIZE) !=-1) {
-		 printf("LINE SEP POS: %d\n", lbuffer->here + lbuffer->bytesread);
+	while ((umbruch = buf_readline(lbuffer, line, LINEBUFFERSIZE)) !=-1) {
+		 if (umbruch > 0) {
+			 printf("LINESTARTPOS: %d\n", buf_where(lbuffer));
+		}
 	} 
 
 	
@@ -80,7 +82,7 @@ int fi_compactify(FileIndex *fi);
 
 int main(int argc, char *argv[]) {
 	FileIndex *findex;
-	const char *line_separator = "From ";
+	const char *line_separator = "\r\n";
 
 	
 	printf("Lese folgende Datei ein: %s\n\n", argv[1]);

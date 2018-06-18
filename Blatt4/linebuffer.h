@@ -1,7 +1,7 @@
 #ifndef LINEBUFFER_H
 #define LINEBUFFER_H
 
-#define LINEBUFFERSIZE 1024
+#define LINEBUFFERSIZE 8
 
 typedef struct lbuf {
     int descriptor;             /* Eingabe-Descriptor */

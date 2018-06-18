@@ -5,7 +5,7 @@ fileindex: fileindex.c linebuffer.c
 	$(CC) $(CFLAGS) -o fileindex fileindex.c linebuffer.c 
 
 run: fileindex
-	./fileindex mini.mbox
+	./fileindex testdatei_MIT_RN.txt
 
 
 clean:
