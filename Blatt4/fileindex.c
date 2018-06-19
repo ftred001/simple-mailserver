@@ -26,10 +26,14 @@
  
  FileIndexEntry *new_entry(int nr) {
 	FileIndexEntry *entry = calloc(sizeof(FileIndexEntry), 0);
-	
+	entry->next = NULL;
 	entry->nr = nr;
-	
 	return entry;
+}
+
+FileIndexEntry *append_entry(FileIndexEntry *parent, FileIndexEntry *child) {
+	parent->next = child;
+	return child;
 }
  
 /* Indiziert angegebene Datei filepath. Trennzeilen sind wie SEPARATOR und gehören NICHT zum Inhalt
@@ -38,7 +42,7 @@
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
 	FileIndex *findex = calloc(sizeof(FileIndex), 0);
-	FileIndexEntry *entry;
+	FileIndexEntry *entry, *mem;
 	char *line = calloc(1024, sizeof(char));
 	LineBuffer *b;
 	int fd, umbruch=0, offsetpos=0;
@@ -54,17 +58,29 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
 		 if (umbruch >= 0) {
+			findex->totalSize += umbruch + b->lineseplen; 
+			
 			/* Sektionsanfang */
 			if (!strncmp(line, "From ", 5)) {
-				/* Merke alten Entry */
-				/* Erstelle neuen Entry */
-				/* Lass alten Entry auf neuen Entry zeigen */
 				findex->nEntries++;
-				entry = new_entry(findex->nEntries);
+				
+				if (!findex->nEntries) {
+					printf("INIT HEAD\n");
+					entry = new_entry(findex->nEntries);
+					findex->entries = entry;
+				} else {
+					printf("APPEND SECTION\n");
+					/* Merke alten Entry */
+					/* Erstelle neuen Entry */
+					/* Lass alten Entry auf neuen Entry zeigen */
+					
+					mem = entry;
+					entry = new_entry(findex->nEntries);
+					append_entry(mem, entry);
+				}
 				is_head = 1;
 				printf("%d ", buf_where(b));
-				printf("SECTION ANFANG %s\n", line);
-				
+				printf("ENTRY #%d Size: %d Lines %d\n",entry->nr,entry->size,entry->lines);
 			}
 			
 			if (entry->nr && is_head == 0) {
