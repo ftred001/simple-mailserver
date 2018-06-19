@@ -7,6 +7,9 @@ fileindex: fileindex.c linebuffer.c
 run: fileindex
 	./fileindex joendhard.mbox
 
+debug:
+	nemiver ./fileindex joendhard.mbox
+	
 
 clean:
 	rm fileindex

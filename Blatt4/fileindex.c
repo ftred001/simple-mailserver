@@ -115,7 +115,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
-		 if (umbruch >= 0) {
+		/* NUR WENN TEXT GELESEN WURDE */
+		if (umbruch >=0) {
 			findex->totalSize =  findex->totalSize + umbruch + b->lineseplen; 
 			
 			/* Sektionsanfang */
@@ -127,15 +128,14 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 				if (!findex->entries) {
 					findex->entries = new_entry(findex->nEntries);
 					entry = findex->entries;
-					print_entry(entry);
 				} else {
+					ptr = findex->entries;
 					while(ptr->next != NULL) {
-						print_entry(ptr);
 						ptr = ptr->next;
 					}
 					ptr->next = new_entry(findex->nEntries);
 					entry = ptr->next;
-					
+									
 				}
 				
 			}
@@ -152,6 +152,10 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 				is_head = 0;
 			}
 			 
+		}
+		
+		if (umbruch == -2) {
+			line = "";
 		}
 	} 
 
