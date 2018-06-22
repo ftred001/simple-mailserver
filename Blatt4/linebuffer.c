@@ -9,18 +9,14 @@
 
 /*
  * To Test: buf_dispose(LineBuffer lb) wirklich freigegeben? 
- * To Test: buf_readline() Wird richtige POS returned?
- * To Test: buf_readline() Zwei Zeichen (Zeilenende/-anfang) verarbeiten.
- * To Test: buf_where() Prüfen ob korrekt.
- * To Test: buf_seek() Testen ob richtig verschoben wird.
  */
  
 
 
 LineBuffer *buf_new(int descriptor, const char *linesep) {
-	LineBuffer *lb;
-	lb = calloc(1,sizeof(LineBuffer));
+	LineBuffer *lb = (LineBuffer*)calloc(1,sizeof(LineBuffer));
 	lb->descriptor = descriptor;
+	lb->linesep = calloc(1, strlen(linesep));
 	lb->linesep = linesep;
 	lb->lineseplen = strlen(linesep);
 	return lb;
@@ -32,7 +28,6 @@ void buf_dispose(LineBuffer *lb) {
 		printf("---Nothing to dispose. *lb == NULL\n");
 	}
 	free(lb);
-	lb = NULL;
 	if (!lb) {
 		printf("---Disposing succesful!\n");
 	} else {
