@@ -27,9 +27,18 @@ LineBuffer *buf_new(int descriptor, const char *linesep) {
 }
 
 void buf_dispose(LineBuffer *lb) {
+	printf(">>>buf_dispose(LineBuffer *lb)\n");
+	if (lb == NULL) {
+		printf("---Nothing to dispose. *lb == NULL\n");
+	}
 	free(lb);
 	lb = NULL;
-	printf("-----LineBuffer disposed-----\n");
+	if (!lb) {
+		printf("---Disposing succesful!\n");
+	} else {
+		print_buffer(lb);
+	}
+	
 }
 
 void print_buffer(LineBuffer *lb) {

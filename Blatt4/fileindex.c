@@ -45,19 +45,29 @@
 	printf("\n\n");
 }
 
-void print_fi(FileIndex *i) {
+void print_fi(FileIndex *fi) {
+	if (fi == NULL) {
+		printf("CANNOT PRINT fi = NULL\n");
+		return;
+	}
+	
 	printf("----FileIndex----\n");
-	printf("Filepath: %s\n", i->filepath);
-	printf("nEntries: %d\n", i->nEntries);
-	printf("totalSize: %d\n", i->totalSize);
+	printf("Filepath: %s\n", fi->filepath);
+	printf("nEntries: %d\n", fi->nEntries);
+	printf("totalSize: %d\n", fi->totalSize);
 	printf("\n\n");
 }
  
  
  void print_entries(FileIndex *fi) {
-	FileIndexEntry *e = NULL;
+	FileIndexEntry *e = fi->entries;
+	printf(">>>Print Entries\n");
 	
-	e = fi->entries;
+	
+	if (e == NULL) {
+		printf("---NO ENTRIES FOUND!\n");
+		return;
+	}
 	
 	while(e != NULL) {
 		print_entry(e);
@@ -74,11 +84,12 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	FileIndex *findex = calloc(1, sizeof(FileIndex));
 	FileIndexEntry *entry;
 	FileIndexEntry *ptr;
-	char *line = calloc(1024, sizeof(char));
+	char * line;
+	char l[LINEBUFFERSIZE];
 	LineBuffer *b;
 	int fd, umbruch=0;
 	int linestart, lineend;
-	
+	line = l;
 	
 	findex->filepath = filepath;
 	
@@ -139,7 +150,25 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 /* Gibt Speicher für FileIndex-Struct frei
  * ACHTUNG: INKLUSIVE Liste der FileIndex Knoten 
  */
-void fi_dispose(FileIndex *fi);
+void fi_dispose(FileIndex *fi) {
+	FileIndexEntry *entry = fi->entries;
+	FileIndexEntry *n;
+	
+	printf(">>>fi_dispose(FileIndex *fi)\n");
+	
+	while (entry->next != NULL) {
+		n = entry->next;
+		free(entry);
+		entry = NULL;
+		entry = n;
+	}
+	free(entry);
+	entry = NULL;
+	
+	free(fi);
+	fi = NULL;
+	printf("---Disposing Entries succesful!\n");
+}
 
 /* return Zeiger auf FileIndexEntry zum Listenelement n
  * ACHTUNG: Zählung beginnt bei "1" <- EINS
@@ -148,17 +177,17 @@ void fi_dispose(FileIndex *fi);
 FileIndexEntry *fi_find(FileIndex *fi, int n) {
 	FileIndexEntry *res = fi->entries;
 	
-	if(n<1 || n > fi->nEntries) {
-		return NULL;
-	}
+	printf(">>>Find Entry #%d\n",n);
 	
 	while(res != NULL) {
 		if (res->nr == n) {
+			printf("---Entry #%d found\n",n);
 			return res;
 		}
 		res = res->next;
 	}
 	
+	printf("---Entry NOT found\n");
 	return NULL;
 }
 
@@ -190,6 +219,12 @@ int main(int argc, char *argv[]) {
 	print_fi(findex);
 	
 	res = fi_find(findex, 9);
+	
+	print_entry(res);
+	
+	fi_dispose(findex);
+	
+	res = fi_find(findex, 1);
 	
 	print_entry(res);
 	
