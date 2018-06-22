@@ -25,6 +25,13 @@
  *  */
  
  void print_entry(FileIndexEntry *e) {
+	
+	if (e == NULL) {
+		printf("ENTRY IS NULL!!!\n");
+		return;
+	} 
+	
+	 
 	printf("----Entry #%d----\n", e->nr);
 	printf("Seekpos: %d\n", e->seekpos);
 	printf("Size: %d\n", e->size);
@@ -57,31 +64,6 @@ void print_fi(FileIndex *i) {
 		e = e->next;
 	}
 }
-
-void append_entry(FileIndex *i, FileIndexEntry *e)  {
-	FileIndexEntry *ptr;
-	
-	printf("APPEND ENTRY\n");
-	
-	if (i->entries == NULL) {
-		printf("Entries = NULL\n");
-		i->entries = e;
-		return;
-	}
-	
-	printf("ENTRIES NOT NULL\n");
-	
-	ptr = i->entries;
-	
-	while(ptr->next != NULL) {
-		ptr = ptr->next;
-	}
-	
-	ptr->next = e;
-	return;
-}
- 
- 
 
  
 /* Indiziert angegebene Datei filepath. Trennzeilen sind wie SEPARATOR und gehören NICHT zum Inhalt
@@ -163,19 +145,39 @@ void fi_dispose(FileIndex *fi);
  * ACHTUNG: Zählung beginnt bei "1" <- EINS
  * return NULL bei Fehler
  * */
-FileIndexEntry *fi_find(FileIndex *fi, int n);
+FileIndexEntry *fi_find(FileIndex *fi, int n) {
+	FileIndexEntry *res = fi->entries;
+	
+	if(n<1 || n > fi->nEntries) {
+		return NULL;
+	}
+	
+	while(res != NULL) {
+		if (res->nr == n) {
+			return res;
+		}
+		res = res->next;
+	}
+	
+	return NULL;
+}
 
 
 /* Löscht alle Abschnitte, wo del_flag == 1 ist. -> Umkopieren + Umbenennen
  * return 0 bei Erfolg.
  * return != 0 bei FEHLER
  */
-int fi_compactify(FileIndex *fi);
+int fi_compactify(FileIndex *fi) {
+	FileIndexEntry *akt = fi->entries;
+	
+	return 0;
+}
 
 
 
 int main(int argc, char *argv[]) {
 	FileIndex *findex;
+	FileIndexEntry *res;
 	const char *line_separator = "\n";
 
 	
@@ -184,6 +186,12 @@ int main(int argc, char *argv[]) {
 	findex = fi_new(argv[1], line_separator);
 
 	print_entries(findex);
+	
+	print_fi(findex);
+	
+	res = fi_find(findex, 9);
+	
+	print_entry(res);
 	
 	return 0;
 }
