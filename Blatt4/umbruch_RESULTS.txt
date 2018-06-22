@@ -1,0 +1,846 @@
+Match 1
+Full match	0-54	`From frits@vollradisroda.xy  Sun May 27 19:05:07 2018
+`
+Match 2
+Full match	54-92	`Return-Path: <frits@vollradisroda.xy>
+`
+Match 3
+Full match	92-127	`X-Original-To: joendhard@biffel.xy
+`
+Match 4
+Full match	127-161	`Delivered-To: joendhard@biffel.xy
+`
+Match 5
+Full match	161-214	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 6
+Full match	214-269	`	id 2BB5849EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 7
+Full match	269-295	`To: <joendhard@biffel.xy>
+`
+Match 8
+Full match	295-334	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 9
+Full match	334-389	`Message-Id: <20180527170507.2BB5849EAA@mail.biffel.xy>
+`
+Match 10
+Full match	389-434	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 11
+Full match	434-463	`From: frits@vollradisroda.xy
+`
+Match 12
+Full match	463-464	`
+`
+Match 13
+Full match	464-489	`Sehr geehrter Joendhard,
+`
+Match 14
+Full match	489-490	`
+`
+Match 15
+Full match	490-534	`wie in unserem Telefonat besprochen wuerden
+`
+Match 16
+Full match	534-579	`wir uns hoch geehrt fuehlen, sollten Sie die
+`
+Match 17
+Full match	579-628	`Zeit finden, uns in unserem Schloss zu besuchen.
+`
+Match 18
+Full match	628-629	`
+`
+Match 19
+Full match	629-673	`Der von Ihnen in Aussicht gestellte Vortrag
+`
+Match 20
+Full match	673-719	`ueber die Bedeutung des Niesens in der Antike
+`
+Match 21
+Full match	719-769	`findet bei der Tagung der Hals-Nasen-Ohren-Aerzte
+`
+Match 22
+Full match	769-817	`in unseren Raeumlichkeiten ohne Zweifel grossen
+`
+Match 23
+Full match	817-855	`Anklang und ungeheucheltes Interesse.
+`
+Match 24
+Full match	855-856	`
+`
+Match 25
+Full match	856-898	`In der Hoffnung auf eine positive Antwort
+`
+Match 26
+Full match	898-947	`verbleiben wir mit dem Ausdruck  vorzueglichster
+`
+Match 27
+Full match	947-963	`Hochachtung Ihr
+`
+Match 28
+Full match	963-1015	`   Frits van Bommelding, Schlossherr und -Verwalter
+`
+Match 29
+Full match	1015-1016	`
+`
+Match 30
+Full match	1016-1070	`From marizzibel@greatest.xy  Sun May 27 19:05:07 2018
+`
+Match 31
+Full match	1070-1108	`Return-Path: <marizzibel@greatest.xy>
+`
+Match 32
+Full match	1108-1143	`X-Original-To: joendhard@biffel.xy
+`
+Match 33
+Full match	1143-1177	`Delivered-To: joendhard@biffel.xy
+`
+Match 34
+Full match	1177-1230	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 35
+Full match	1230-1285	`	id 31B5449EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 36
+Full match	1285-1311	`To: <joendhard@biffel.xy>
+`
+Match 37
+Full match	1311-1350	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 38
+Full match	1350-1405	`Message-Id: <20180527170507.31B5449EAA@mail.biffel.xy>
+`
+Match 39
+Full match	1405-1450	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 40
+Full match	1450-1479	`From: marizzibel@greatest.xy
+`
+Match 41
+Full match	1479-1480	`
+`
+Match 42
+Full match	1480-1495	`Hey Joendhard,
+`
+Match 43
+Full match	1495-1496	`
+`
+Match 44
+Full match	1496-1549	`wann kann ich denn endlich mit meiner Kohle rechnen?
+`
+Match 45
+Full match	1549-1602	`Du schuldest mir immer noch die vollen 34 Cent, die 
+`
+Match 46
+Full match	1602-1654	`ich Dir vorgestern(!) bei unserem Ausflug geliehen 
+`
+Match 47
+Full match	1654-1706	`habe, damit Du Dir Dein Mango-Eis leisten konntest.
+`
+Match 48
+Full match	1706-1757	`Hat Dich immer noch keiner gebucht? Wen wundert's?
+`
+Match 49
+Full match	1757-1807	`Ich erwarte eine Anzahlung von mindestens 50% der
+`
+Match 50
+Full match	1807-1856	`ausstehenden Summe, ansonsten war's das mit uns.
+`
+Match 51
+Full match	1856-1857	`
+`
+Match 52
+Full match	1857-1896	`Deine potentiell kuenftige Exverlobte,
+`
+Match 53
+Full match	1896-1907	`Marizzibel
+`
+Match 54
+Full match	1907-1908	`
+`
+Match 55
+Full match	1908-1909	`
+`
+Match 56
+Full match	1909-1963	`From frits@vollradisroda.xy  Sun May 27 19:05:07 2018
+`
+Match 57
+Full match	1963-2001	`Return-Path: <frits@vollradisroda.xy>
+`
+Match 58
+Full match	2001-2036	`X-Original-To: joendhard@biffel.xy
+`
+Match 59
+Full match	2036-2070	`Delivered-To: joendhard@biffel.xy
+`
+Match 60
+Full match	2070-2123	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 61
+Full match	2123-2178	`	id 3923849EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 62
+Full match	2178-2204	`To: <joendhard@biffel.xy>
+`
+Match 63
+Full match	2204-2243	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 64
+Full match	2243-2298	`Message-Id: <20180527170507.3923849EAA@mail.biffel.xy>
+`
+Match 65
+Full match	2298-2343	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 66
+Full match	2343-2372	`From: frits@vollradisroda.xy
+`
+Match 67
+Full match	2372-2373	`
+`
+Match 68
+Full match	2373-2398	`Sehr geehrter Joendhard,
+`
+Match 69
+Full match	2398-2399	`
+`
+Match 70
+Full match	2399-2437	`> sehr gerne nehme ich Ihre Einladung
+`
+Match 71
+Full match	2437-2480	`> zum Vortrag bei der HNO-Aerztetagung an.
+`
+Match 72
+Full match	2480-2523	`> Mein Honorar betraegt 50 Euro, von denen
+`
+Match 73
+Full match	2523-2561	`> ich Sie aus persoenlichen Gruenden 
+`
+Match 74
+Full match	2561-2603	`> bitten muss, 34 Cent moeglichst schnell
+`
+Match 75
+Full match	2603-2631	`> im Voraus zu ueberweisen.
+`
+Match 76
+Full match	2631-2632	`
+`
+Match 77
+Full match	2632-2682	`Mit Freude und Dankbarkeit nehme ich Ihre Zusage,
+`
+Match 78
+Full match	2682-2733	`als Top-Redner bei unserer Tagung aufzutreten, zur
+`
+Match 79
+Full match	2733-2779	`Kenntnis. Die von Ihnen gewuenschte Anzahlung
+`
+Match 80
+Full match	2779-2832	`erscheint uns angesichts Ihrer Reputation angemessen
+`
+Match 81
+Full match	2832-2861	`und wird alsbald angewiesen.
+`
+Match 82
+Full match	2861-2862	`
+`
+Match 83
+Full match	2862-2884	`Hochachtungsvoll, Ihr
+`
+Match 84
+Full match	2884-2936	`   Frits van Bommelding, Schlossherr und -Verwalter
+`
+Match 85
+Full match	2936-2937	`
+`
+Match 86
+Full match	2937-2938	`
+`
+Match 87
+Full match	2938-2939	`
+`
+Match 88
+Full match	2939-2940	`
+`
+Match 89
+Full match	2940-2994	`From marizzibel@greatest.xy  Sun May 27 19:05:07 2018
+`
+Match 90
+Full match	2994-3032	`Return-Path: <marizzibel@greatest.xy>
+`
+Match 91
+Full match	3032-3067	`X-Original-To: joendhard@biffel.xy
+`
+Match 92
+Full match	3067-3101	`Delivered-To: joendhard@biffel.xy
+`
+Match 93
+Full match	3101-3154	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 94
+Full match	3154-3209	`	id 3F95849EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 95
+Full match	3209-3235	`To: <joendhard@biffel.xy>
+`
+Match 96
+Full match	3235-3274	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 97
+Full match	3274-3329	`Message-Id: <20180527170507.3F95849EAA@mail.biffel.xy>
+`
+Match 98
+Full match	3329-3374	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 99
+Full match	3374-3403	`From: marizzibel@greatest.xy
+`
+Match 100
+Full match	3403-3404	`
+`
+Match 101
+Full match	3404-3418	`Ey Joendhard,
+`
+Match 102
+Full match	3418-3419	`
+`
+Match 103
+Full match	3419-3441	`> Liebste Marizzibel,
+`
+Match 104
+Full match	3441-3481	`> ich tue wirklich mein Bestes, den Dir
+`
+Match 105
+Full match	3481-3522	`> geschuldeten Betrag moeglichst schnell
+`
+Match 106
+Full match	3522-3567	`> aufzubringen. Eben habe ich eine lukrative
+`
+Match 107
+Full match	3567-3607	`> Anfrage fuer eine Ansprache bei einem
+`
+Match 108
+Full match	3607-3650	`> Aerztekongress erhalten - drueck mir die
+`
+Match 109
+Full match	3650-3691	`> Daumen, dass die mich engagieren, dann
+`
+Match 110
+Full match	3691-3733	`> sind wir unsere Gelddifferenzen los und
+`
+Match 111
+Full match	3733-3782	`> koennen uns wieder den Hochzeitsvorbereitungen
+`
+Match 112
+Full match	3782-3792	`> widmen.
+`
+Match 113
+Full match	3792-3793	`
+`
+Match 114
+Full match	3793-3834	`Deine Gelddifferenzen meinst Du wohl. DU
+`
+Match 115
+Full match	3834-3877	`schuldest MIR die 34 Cent. SEIT GESTERN!!!
+`
+Match 116
+Full match	3877-3878	`
+`
+Match 117
+Full match	3878-3923	`Also drueck' Dir mal selbst die Daumen wegen
+`
+Match 118
+Full match	3923-3968	`des Jobs und vergeige es nicht, sonst gibt's
+`
+Match 119
+Full match	3968-4012	`eine Menge von Sachen, denen Du Dich widmen
+`
+Match 120
+Full match	4012-4056	`kannst, aber eine Hochzeit ist nicht dabei.
+`
+Match 121
+Full match	4056-4057	`
+`
+Match 122
+Full match	4057-4060	`M.
+`
+Match 123
+Full match	4060-4061	`
+`
+Match 124
+Full match	4061-4062	`
+`
+Match 125
+Full match	4062-4122	`From joghurta@bier-fuer-taucha.xy  Sun May 27 19:05:07 2018
+`
+Match 126
+Full match	4122-4166	`Return-Path: <joghurta@bier-fuer-taucha.xy>
+`
+Match 127
+Full match	4166-4201	`X-Original-To: joendhard@biffel.xy
+`
+Match 128
+Full match	4201-4235	`Delivered-To: joendhard@biffel.xy
+`
+Match 129
+Full match	4235-4288	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 130
+Full match	4288-4343	`	id 45BE349EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 131
+Full match	4343-4369	`To: <joendhard@biffel.xy>
+`
+Match 132
+Full match	4369-4408	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 133
+Full match	4408-4463	`Message-Id: <20180527170507.45BE349EAA@mail.biffel.xy>
+`
+Match 134
+Full match	4463-4508	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 135
+Full match	4508-4543	`From: joghurta@bier-fuer-taucha.xy
+`
+Match 136
+Full match	4543-4544	`
+`
+Match 137
+Full match	4544-4562	`Liebes Bruederle,
+`
+Match 138
+Full match	4562-4563	`
+`
+Match 139
+Full match	4563-4610	`Du hast schon lange nichts mehr von Dir hoeren
+`
+Match 140
+Full match	4610-4658	`lassen. Wie laeuft es denn so bei Dir? Ich habe
+`
+Match 141
+Full match	4658-4706	`noch keine Hochzeitseinladung bekommen - sollte
+`
+Match 142
+Full match	4706-4751	`die Feier nicht uebernaechste Woche sein? Du
+`
+Match 143
+Full match	4751-4795	`wirst Deine einzige Schwester ja wohl nicht
+`
+Match 144
+Full match	4795-4846	`vergessen haben :-) Oder hast Du Deine Zukuenftige
+`
+Match 145
+Full match	4846-4891	`die Brief zur Post bringen lassen und meiner
+`
+Match 146
+Full match	4891-4938	`ist dabei zufaellig verloren gegangen? Sie hat
+`
+Match 147
+Full match	4938-4993	`ja bei Eurer Verlobung schon so eine Nummer abgezogen.
+`
+Match 148
+Full match	4993-5038	`Aber ich habe ja versprochen, mich kuenftig 
+`
+Match 149
+Full match	5038-5055	`zurueckzuhalten.
+`
+Match 150
+Full match	5055-5056	`
+`
+Match 151
+Full match	5056-5102	`In unserer Familienbrauerei in Taucha laueft 
+`
+Match 152
+Full match	5102-5148	`inzwischen alles gut. Seit Onkel Heliodor die
+`
+Match 153
+Full match	5148-5198	`Qualitaetssicherung persoenlich durchfuehrt, ist 
+`
+Match 154
+Full match	5198-5260	`zwar nur noch selten ein klarer Satz von ihm herauszukriegen,
+`
+Match 155
+Full match	5260-5316	`aber seine Tipps sind trotzdem Gold wert. Insbesondere,
+`
+Match 156
+Full match	5316-5380	`doch Kronkorken anstelle von Kork-Korken zu verwenden. Ja, ich 
+`
+Match 157
+Full match	5380-5430	`weiss, das mit dem Kork war Deine Idee, die Marke
+`
+Match 158
+Full match	5430-5485	`aufzupolieren und alles edler aussehen zu lassen, aber
+`
+Match 159
+Full match	5485-5543	`die Biertrinker haben wohl nicht immer einen Korkenzieher
+`
+Match 160
+Full match	5543-5595	`zur Hand. Jetzt laeuft der Absatz jedenfalls super.
+`
+Match 161
+Full match	5595-5596	`
+`
+Match 162
+Full match	5596-5651	`Nachdem Onkel Heliodor sich in der Qualitaetssicherung
+`
+Match 163
+Full match	5651-5700	`so recht eingelebt hat, hat uebrigens auch Tante
+`
+Match 164
+Full match	5700-5756	`Erdmuthe eine Top-Idee gehabt, die wir gleich umgesetzt
+`
+Match 165
+Full match	5756-5812	`haben: Frustrator, das alkoholfreie Starkbier. War auch
+`
+Match 166
+Full match	5812-5867	`ein Kompromiss, ansonsten haette sie ihren Mann nicht 
+`
+Match 167
+Full match	5867-5902	`laenger in der QS arbeiten lassen.
+`
+Match 168
+Full match	5902-5903	`
+`
+Match 169
+Full match	5903-5942	`Bis bald und viele Gruesse aus Taucha,
+`
+Match 170
+Full match	5942-5967	`Deine Schwester Joghurta
+`
+Match 171
+Full match	5967-5968	`
+`
+Match 172
+Full match	5968-5969	`
+`
+Match 173
+Full match	5969-6029	`From joghurta@bier-fuer-taucha.xy  Sun May 27 19:05:07 2018
+`
+Match 174
+Full match	6029-6073	`Return-Path: <joghurta@bier-fuer-taucha.xy>
+`
+Match 175
+Full match	6073-6108	`X-Original-To: joendhard@biffel.xy
+`
+Match 176
+Full match	6108-6142	`Delivered-To: joendhard@biffel.xy
+`
+Match 177
+Full match	6142-6195	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 178
+Full match	6195-6250	`	id 4AF5D49EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 179
+Full match	6250-6276	`To: <joendhard@biffel.xy>
+`
+Match 180
+Full match	6276-6315	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 181
+Full match	6315-6370	`Message-Id: <20180527170507.4AF5D49EAA@mail.biffel.xy>
+`
+Match 182
+Full match	6370-6415	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 183
+Full match	6415-6450	`From: joghurta@bier-fuer-taucha.xy
+`
+Match 184
+Full match	6450-6451	`
+`
+Match 185
+Full match	6451-6462	`Hi Joendi,
+`
+Match 186
+Full match	6462-6463	`
+`
+Match 187
+Full match	6463-6507	`> > Wie laeuft es denn so bei Dir? Ich habe
+`
+Match 188
+Full match	6507-6559	`> > noch keine Hochzeitseinladung bekommen - sollte
+`
+Match 189
+Full match	6559-6608	`> > die Feier nicht uebernaechste Woche sein? Du
+`
+Match 190
+Full match	6608-6656	`> > wirst Deine einzige Schwester ja wohl nicht
+`
+Match 191
+Full match	6656-6680	`> > vergessen haben :-)
+`
+Match 192
+Full match	6680-6682	`>
+`
+Match 193
+Full match	6682-6727	`> Nie im Leben. Der Hochzeitstermin steht so
+`
+Match 194
+Full match	6727-6773	`> fest wie das Treffen von Kim und Trump. Und
+`
+Match 195
+Full match	6773-6820	`> Geldprobleme gibt's auch keine, wenn es eine
+`
+Match 196
+Full match	6820-6873	`> Hochzeit gibt, sagt meine Zukuenftige - alles gut!
+`
+Match 197
+Full match	6873-6874	`
+`
+Match 198
+Full match	6874-6904	`Na, dann bin ich ja beruhigt.
+`
+Match 199
+Full match	6904-6905	`
+`
+Match 200
+Full match	6905-6930	`Bis dann, Deine Joghurta
+`
+Match 201
+Full match	6930-6931	`
+`
+Match 202
+Full match	6931-6932	`
+`
+Match 203
+Full match	6932-6994	`From admin@make-beer-great-again.xy  Sun May 27 19:05:07 2018
+`
+Match 204
+Full match	6994-7040	`Return-Path: <admin@make-beer-great-again.xy>
+`
+Match 205
+Full match	7040-7075	`X-Original-To: joendhard@biffel.xy
+`
+Match 206
+Full match	7075-7109	`Delivered-To: joendhard@biffel.xy
+`
+Match 207
+Full match	7109-7162	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 208
+Full match	7162-7217	`	id 5031F49EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 209
+Full match	7217-7243	`To: <joendhard@biffel.xy>
+`
+Match 210
+Full match	7243-7282	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 211
+Full match	7282-7337	`Message-Id: <20180527170507.5031F49EAA@mail.biffel.xy>
+`
+Match 212
+Full match	7337-7382	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 213
+Full match	7382-7419	`From: admin@make-beer-great-again.xy
+`
+Match 214
+Full match	7419-7420	`
+`
+Match 215
+Full match	7420-7439	`Dear Mr Joendhard,
+`
+Match 216
+Full match	7439-7440	`
+`
+Match 217
+Full match	7440-7499	`I heard your sister Joghurta (is that her real name?) just
+`
+Match 218
+Full match	7499-7559	`started selling a new alcohol-free beer named "frustrator".
+`
+Match 219
+Full match	7559-7573	`Is that true?
+`
+Match 220
+Full match	7573-7574	`
+`
+Match 221
+Full match	7574-7627	`>From my standpoint this is a clear violation of the
+`
+Match 222
+Full match	7627-7690	`Reinhardsgebot for beer your country is rightfully so proud of
+`
+Match 223
+Full match	7690-7732	`and that dates back to the 16th century. 
+`
+Match 224
+Full match	7732-7733	`
+`
+Match 225
+Full match	7733-7792	`>From other people's point of view this might seem to be a
+`
+Match 226
+Full match	7792-7852	`great innovation, but think about it. Beer without alcohol,
+`
+Match 227
+Full match	7852-7909	`zebras without stripes, operating systems that won't let
+`
+Match 228
+Full match	7909-7967	`you use your computer due to hour-long update times even 
+`
+Match 229
+Full match	7967-8022	`on the most advanced hardware - is that a world worth 
+`
+Match 230
+Full match	8022-8033	`living in?
+`
+Match 231
+Full match	8033-8034	`
+`
+Match 232
+Full match	8034-8093	`Fromhardt von Wusel, your famous German story teller, said
+`
+Match 233
+Full match	8093-8160	`once: "Beer ain't no Fanta, so don't mess with Reinhard's Gebot". 
+`
+Match 234
+Full match	8160-8218	`I think we all should take a moment to reflect about the 
+`
+Match 235
+Full match	8218-8280	`deep wisdom in these words, which excel with powerful points.
+`
+Match 236
+Full match	8280-8281	`
+`
+Match 237
+Full match	8281-8334	`Please talk to your sister asap, otherwise I will...
+`
+Match 238
+Full match	8334-8336	`.
+`
+Match 239
+Full match	8336-8339	`..
+`
+Match 240
+Full match	8339-8343	`...
+`
+Match 241
+Full match	8343-8364	`.... you understand?
+`
+Match 242
+Full match	8364-8365	`
+`
+Match 243
+Full match	8365-8375	`Regards, 
+`
+Match 244
+Full match	8375-8434	`Mr Mifi from Tjokelinga (near Sweden, but not quite there)
+`
+Match 245
+Full match	8434-8435	`
+`
+Match 246
+Full match	8435-8436	`
+`
+Match 247
+Full match	8436-8489	`From absender@supermail.xy  Sun May 27 19:05:07 2018
+`
+Match 248
+Full match	8489-8526	`Return-Path: <absender@supermail.xy>
+`
+Match 249
+Full match	8526-8561	`X-Original-To: joendhard@biffel.xy
+`
+Match 250
+Full match	8561-8595	`Delivered-To: joendhard@biffel.xy
+`
+Match 251
+Full match	8595-8648	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 252
+Full match	8648-8703	`	id 5577149EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 253
+Full match	8703-8729	`To: <joendhard@biffel.xy>
+`
+Match 254
+Full match	8729-8768	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 255
+Full match	8768-8823	`Message-Id: <20180527170507.5577149EAA@mail.biffel.xy>
+`
+Match 256
+Full match	8823-8868	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 257
+Full match	8868-8896	`From: absender@supermail.xy
+`
+Match 258
+Full match	8896-8897	`
+`
+Match 259
+Full match	8897-8899	`.
+`
+Match 260
+Full match	8899-8902	`..
+`
+Match 261
+Full match	8902-8906	`...
+`
+Match 262
+Full match	8906-8911	`....
+`
+Match 263
+Full match	8911-8917	`.....
+`
+Match 264
+Full match	8917-8918	`
+`
+Match 265
+Full match	8918-8971	`From absender@supermail.xy  Sun May 27 19:05:07 2018
+`
+Match 266
+Full match	8971-9008	`Return-Path: <absender@supermail.xy>
+`
+Match 267
+Full match	9008-9043	`X-Original-To: joendhard@biffel.xy
+`
+Match 268
+Full match	9043-9077	`Delivered-To: joendhard@biffel.xy
+`
+Match 269
+Full match	9077-9130	`Received: by mail.biffel.xy (Postfix, from userid 0)
+`
+Match 270
+Full match	9130-9185	`	id 5AAAB49EAA; Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 271
+Full match	9185-9211	`To: <joendhard@biffel.xy>
+`
+Match 272
+Full match	9211-9250	`X-Mailer: mail (GNU Mailutils 2.99.99)
+`
+Match 273
+Full match	9250-9305	`Message-Id: <20180527170507.5AAAB49EAA@mail.biffel.xy>
+`
+Match 274
+Full match	9305-9350	`Date: Sun, 27 May 2018 19:05:07 +0200 (CEST)
+`
+Match 275
+Full match	9350-9378	`From: absender@supermail.xy
+`
+Match 276
+Full match	9378-9379	`
+`
+Match 277
+Full match	9379-9381	`*
+`
+Match 278
+Full match	9381-9384	`**
+`
+Match 279
+Full match	9384-9388	`***
+`
+Match 280
+Full match	9388-9393	`****
+`
+Match 281
+Full match	9393-9399	`*****
+`
+Match 282
+Full match	9399-9400	`
+`

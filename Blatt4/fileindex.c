@@ -46,17 +46,7 @@ void print_fi(FileIndex *i) {
 	printf("\n\n");
 }
  
- FileIndexEntry *new_entry(int nr) {
-	FileIndexEntry *entry = calloc(1, sizeof(FileIndexEntry));
-	
-	entry->next = NULL;
-	entry->nr = nr;
-	
-	printf("New Entry #%d\n", entry->nr);
-	
-	return entry;
-}
-
+ 
  void print_entries(FileIndex *fi) {
 	FileIndexEntry *e = NULL;
 	
@@ -100,11 +90,13 @@ void append_entry(FileIndex *i, FileIndexEntry *e)  {
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
 	FileIndex *findex = calloc(1, sizeof(FileIndex));
-	FileIndexEntry *entry, *ptr;
+	FileIndexEntry *entry;
+	FileIndexEntry *ptr;
 	char *line = calloc(1024, sizeof(char));
 	LineBuffer *b;
 	int fd, umbruch=0;
 	int is_head=0;
+	int linestart, lineend;
 	
 	
 	findex->filepath = filepath;
@@ -115,47 +107,49 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
-		/* NUR WENN TEXT GELESEN WURDE */
-		if (umbruch >=0) {
-			findex->totalSize =  findex->totalSize + umbruch + b->lineseplen; 
+		findex->totalSize =  buf_where(b); 
+		linestart = buf_where(b) - strlen(line) - b->lineseplen;
+		lineend = buf_where(b) - b->lineseplen;
+		printf("Start: %d End:%d line: %s \n", linestart, lineend,line);
+		
+		/* Sektionsanfang */
+		if (!strncmp(line, "From ", 5)) {
+			printf("---HEADSTART---\n");
+			findex->nEntries++;
+			is_head = 1;
 			
-			/* Sektionsanfang */
-			if (!strncmp(line, "From ", 5)) {
-				findex->nEntries++;
-				is_head = 1;
-				
-				
-				if (!findex->entries) {
-					findex->entries = new_entry(findex->nEntries);
-					entry = findex->entries;
-				} else {
-					ptr = findex->entries;
-					while(ptr->next != NULL) {
-						ptr = ptr->next;
-					}
-					ptr->next = new_entry(findex->nEntries);
-					entry = ptr->next;
-									
+			entry = malloc(sizeof(FileIndexEntry));
+			entry->nr = findex->nEntries;
+			
+			
+			if (!findex->entries) {
+				findex->entries = entry;
+			} else {
+				ptr = findex->entries;
+				while(ptr->next != NULL) {
+					ptr = ptr->next;
 				}
-				
+				ptr->next = entry;				
 			}
-			
-			if (entry->nr && is_head == 0) {
-				entry->lines++;
-				entry->size += strlen(line) + b->lineseplen;
-				
-			}
-			
-			/* Erste Leerzeile finden -> HEAD Ende */
-			if (!strcmp(line, "") && is_head) {
-				entry->seekpos = buf_where(b)+b->lineseplen;
-				is_head = 0;
-			}
-			 
 		}
 		
-		if (umbruch == -2) {
-			line = "";
+		if (entry->nr && is_head == 0) {
+			entry->lines++;
+			entry->size += strlen(line) + b->lineseplen;
+			
+		}
+		
+		/* Erste Leerzeile finden -> HEAD Ende */
+		if (!strcmp(line, "") && is_head) {
+			printf("---HEADEND---\n");
+			entry->seekpos = linestart;
+			is_head = 0;
+		}
+		
+		
+		/* Wenn Zeile über Buffer hinausgeht */
+		if (umbruch != -2) {
+			line[0] = '\0';
 		}
 	} 
 

@@ -19,7 +19,7 @@
 
 LineBuffer *buf_new(int descriptor, const char *linesep) {
 	LineBuffer *lb;
-	lb = calloc(0,sizeof(LineBuffer));
+	lb = calloc(1,sizeof(LineBuffer));
 	lb->descriptor = descriptor;
 	lb->linesep = linesep;
 	lb->lineseplen = strlen(linesep);
@@ -44,18 +44,12 @@ void print_buffer(LineBuffer *lb) {
 	printf("---LINEBUFFER END---\n\n");
 }
 
-void fill_buffer(LineBuffer *b, char *line, int linemax) {
-
-
-}
-
-int buf_readline(LineBuffer *b, char *line, int linemax) {
-	int hit_index=0;
-	int li=0;
-	int i;
-	
+int fill_buffer(LineBuffer *b, int linemax) {
 	/* Wenn ich am Anfang oder Ende der LINE bin, lese ich eine neue LINE ein. */
+	
+	
 	if (b->here == b->end) {
+		printf("FILL BUFFER\n");
 		b->end = read(b->descriptor, b->buffer, linemax);
 		if (b->end == 0) {
 			/* Dateiende */
@@ -67,29 +61,32 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 		}	
 		b->bytesread += b->end;
 		b->here = 0;
+		print_buffer(b);
 	} 
 	
+	return b->end;
+}
+
+int buf_readline(LineBuffer *b, char *line, int linemax) {
+	int hit_index=0;
+	int li=0;
+	int i;
+	int res;
+		
+	if ((res = fill_buffer(b, linemax)) <0) {
+		return res;
+	}
+	
+	li = strlen(line);
 	
 	/* Suche Zeilenumbruch und gib Zeilenanfang zurück */
 	while (b->here < b->end) {
+		/* Kopiere Zeichen von Buffer in Line */
 		line[li] =  b->buffer[b->here];
+		
 		/* Finde Vorkommen des LineSeparators */
 		if (b->buffer[b->here] == b->linesep[hit_index]) {
 			hit_index++;
-			
-			/* Wenn Treffer, aber am ENDE der Zeile: Lese mehr Inhalt in Buffer */
-			if (b->here+1 == b->end) {
-				b->end = read(b->descriptor, b->buffer, linemax);
-				if (b->end == 0) {
-					return -1;
-				} else if (b->end <0) {
-					perror("Lesefehler\n");
-					return -42;
-				}	
-				b->bytesread += b->end;
-				b->here = 0;
-				b->here--;
-			}
 		} else {
 			hit_index = 0;
 		}
@@ -102,23 +99,30 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 		if (hit_index == b->lineseplen) {
 			for (i=0;i<=b->lineseplen; i++) {
 				line[li-i] = '\0';
+				/* printf("CUT Separator: %s\n", line); */
+				
 			}
-			
-			return b->here+b->bytesread;
+			li = 0;
+			return buf_where(b);
+		}
+		
+		/* Wenn Zeile nicht komplett fülle den Buffer ein */
+		if (b->here == b->end) {
+			fill_buffer(b, linemax);
 		}
 	}
 	
 
 	
 	
-	/* Line-Ende */
-	return -2;
+	printf("END OF FILE\n");
+	return -1;
 }
 
 
 /* Gibt Position des Bytestroms zurück */
 int buf_where(LineBuffer *b) {
-	return b->bytesread -b->end + b->here;
+	return b->bytesread-b->end + b->here;
 }
 
 /* Positioniert auf Offset in Bytes */
