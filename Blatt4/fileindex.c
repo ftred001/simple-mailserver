@@ -197,38 +197,9 @@ FileIndexEntry *fi_find(FileIndex *fi, int n) {
  * return != 0 bei FEHLER
  */
 int fi_compactify(FileIndex *fi) {
-	
+	/* TODO Richtig implementieren!!! */ 
 	printf(">>>fi_compactify(FileIndex *fi)\n");
-	
-	/* Es gibt einen Anfang*/
-	if(fi->entries != NULL) {
-		/* Erstes Element soll gelöscht werden */
-		if(fi->entries->del_flag) {
-			printf("---Delete FIRST\n");
-			del_count++;
-			n = fi->entries->next;
-			n->nr -= del_count;
-			free(fi->entries);
-			fi->entries = n;
-		} else {
-			akt = fi->entries;
-			while(akt->next != NULL) {
-				n = akt->next;
-				
-				if (n->del_flag) {
-					del_count++;
-					akt->next = n->next;
-					free(n);
-				}
-				n->nr -= del_count;
-				akt=n;
-				
-			}
-		}
-	}
-	
-	fi->nEntries -= del_count;
-	
+		
 	
 	return 0;
 }
@@ -255,7 +226,6 @@ int main(int argc, char *argv[]) {
 	res->del_flag = 1;
 	printf(">>>Lösche EINTRAG 3\n");
 	
-	fi_compactify(findex);
 	
 	print_entries(findex);
 	print_fi(findex);
