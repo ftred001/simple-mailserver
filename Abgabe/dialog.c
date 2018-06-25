@@ -13,6 +13,21 @@ int validate_onoff(DialogRec *d) {
 	return !strcmp(d->param, "on") || !strcmp(d->param, "off"); 
 }
 
+int validate_username(DialogRec *d) {
+	/* TODO: IMPLEMENT! */
+	return !!d->param;
+}
+
+int validate_password(DialogRec *d) {
+	/* TODO: IMPLEMENT! */
+	return !!d->param;
+}
+
+int validate_index(DialogRec *d) {
+	/* TODO: IMPLEMENT! */
+	return !!d->param;
+}
+
 int validator(DialogRec *d) {
 	if (d->validator!=NULL) {
 		return d->validator(d);	
@@ -27,7 +42,7 @@ DialogRec dialog[] = {
 	{ "stat", 		"", 	1,		1,			validate_noparam },
 	{ "list", 		"", 	1,		1,			},
 	{ "list", 		"", 	1,		2,			validate_noparam },
-	{ "retr", 		"",		1,		1,			validate_messagenumber},
+	{ "retr", 		"",		1,		1,			validate_index},
 	{ "QUIT",		"",		1,		2,			validate_noparam },
 	{ "" }
 };
@@ -92,6 +107,7 @@ void printRes(ProlResult res) {
 	printf("%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
 }
 
+/*
 int main(void) {
 	ProlResult res;
 	char line[LINEMAX] = "user joendhard";
@@ -107,7 +123,6 @@ int main(void) {
 	res = processLine(line2, globalstate, dialog);
 	printRes(res);
 	
-	/*
 	res = processLine(line3, globalstate, dialog);
 	printRes(res);
 	res = processLine(line4, globalstate, dialog);
@@ -118,7 +133,7 @@ int main(void) {
 	printRes(res);
 	res = processLine(line7, globalstate, dialog);
 	printRes(res);
-	*/
 	
 	return 0;
 }
+*/

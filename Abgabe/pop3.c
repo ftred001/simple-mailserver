@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "dialog.h"
-#include "database.h"
+#include "dbm.h"
+
 
 
 /* Test-Main für POP3-Protokoll. */

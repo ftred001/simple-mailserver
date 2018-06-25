@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h> /* strtonum */
-#include "database.h"
-
+#include <limits.h> /* strtoul */
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+
+#include "database.h"
+#include "dialog.h"
+
 
 int speichern(int fd, DBRecord *dbr);
 int match_filter(DBRecord *rec, const void *data);
@@ -93,76 +95,128 @@ int test(char *filepath) {
 	return 1;
 }
 
-int main(int argc, char *argv[]) {
-	const char *filepath = "serversettings.cfg";
+int execute_cmd(const char *filepath, int argc, char *line) {
 	int fd;
-	char *std_aquarium = "Gruppenaquarium";
 	int outfd = 1;
+	int i=0;
 	long index;
 	DBRecord rec;
 	char *errstring;
+	char delimiter[] = " ";
+	char *argv[10];
+	char *wort;
+	
+	wort = strtok(line, delimiter);
+	for (i=0; i<=argc; i++) {
+		if (wort != NULL) {
+			argv[i] = calloc(1, LINEMAX);
+			strcpy(argv[i], wort);
+			if (i==argc-1) {
+				/* Cutte letztes \n der Eingabe */
+				argv[i][strlen(wort)-1] = '\0';
+			}
+			wort = strtok(NULL, delimiter);	
+		}
+	}
 	
 	
+	/* Testausgabe von argv */
+	for(i=0;i<argc;i++) {
+		printf("%d | Len: %ld  String: %sX\n", i, strlen(argv[i]), argv[i]);
+	}
+	
+	
+	/* Erstellt Datei, falls nicht existiert */
 	fd = open(filepath, O_RDONLY|O_CREAT,0644);
 	close(fd);
 
 	
-	if (argc == 2) {
-		if (!strcmp(argv[1], "list")) {	db_list(filepath, outfd, match_filter,""); }
+	if (argc == 1) {
+		if (!strcmp(argv[0], "list")) {	
+			printf("===LIST ALL===\n");
+			db_list(filepath, outfd, match_filter,""); 
+		}
 	}
 	
-	if (argc == 3) {
+	if (argc == 2) {
         /* List mit Key Filter */
-		if (!strcmp(argv[1], "list")) {
-            db_list(filepath, outfd, key_filter,argv[2]); 
+		if (!strcmp(argv[0], "list")) {
+			printf("===LIST===\n");
+            db_list(filepath, outfd, key_filter,argv[1]); 
         }
         
         /* List mit Catfilter */
-		if (!strcmp(argv[1], "clist")) {
-            db_list(filepath, outfd, cat_filter,argv[2]); 
+		if (!strcmp(argv[0], "clist")) {
+			printf("===CLIST===\n");
+            db_list(filepath, outfd, cat_filter,argv[1]); 
         }
         
         /* Suche: Key oder Cat */
-		if (!strcmp(argv[1], "search")) {
-			strcpy(rec.key,argv[2]);
-			strcpy(rec.cat,argv[2]);
+        /* "search keyword" */
+		if (!strcmp(argv[0], "search")) {
+			printf("===SEARCH===\n");
+			strcpy(rec.key,argv[1]);
+			strcpy(rec.cat,argv[1]);
 			db_list(filepath, outfd, match_filter, &rec);
 		}
         
 		/* Lösche Indexnummer */
 		/* "delete indexnummer" */
-        if (!strcmp(argv[1], "delete")) {
-			index = strtoul(argv[2], &errstring, 10);
+        if (!strcmp(argv[0], "delete")) {
+			index = strtoul(argv[1], &errstring, 10);
             db_del(filepath, index);
 		}
 	}
 	
-	if (argc == 4) {
-		if (!strcmp(argv[1], "add")) {
-			strcpy(rec.key,argv[2]);
-			strcpy(rec.cat,argv[3]);
-			/* TODO: remove std_aquarium */ 
-			strcpy(rec.value,std_aquarium);
-			db_put(filepath, -1, &rec);
-		}
-        
-        if (!strcmp(argv[1], "update")) {
-			strcpy(rec.key,argv[2]);
-			strcpy(rec.value,argv[3]);
+	if (argc == 3) {
+       
+        if (!strcmp(argv[0], "update")) {
+			strcpy(rec.key,argv[1]);
+			strcpy(rec.value,argv[2]);
 			db_update(filepath, &rec);
 		}
         
 	}
 	
-	if (argc == 5) {
-		if (!strcmp(argv[1], "add")) {
-			strcpy(rec.key,argv[2]);
-			strcpy(rec.cat,argv[3]);
-			strcpy(rec.value,argv[4]);
+	if (argc == 4) {
+		if (!strcmp(argv[0], "add")) {
+			strcpy(rec.key,argv[1]);
+			strcpy(rec.cat,argv[2]);
+			strcpy(rec.value,argv[3]);
 			db_put(filepath, -1, &rec);
 		}
 	}
 	
+	return 0;
+}
+
+int main(int argc, char *argv[]) {
+	const char *filepath = "serversettings.cfg";
+	char *line = calloc(LINEMAX, sizeof(char));
+	char *mem = calloc(LINEMAX, sizeof(char));
+	int linecounter;
+	char *wort;
+	char delimiter[] = " ";
+	
+
+	printf("=========\nWillkommen im DataBaseManager Bitte nutzen Sie tolle Commands!\n===========\n\n");
+	
+	/*  Einlesen bis EOF */
+	while (fgets(line, LINEMAX, stdin) != NULL) {
+		strcpy(mem, line);
+		linecounter = 0;
+		/* Argumente zählen */
+		wort = strtok(line, delimiter);
+	
+		while(wort != NULL) {
+			linecounter++;
+			printf("%d %s\n", linecounter, wort);
+			wort = strtok(NULL, delimiter);
+		}
+		execute_cmd(filepath, linecounter, mem);
+	}
+	
+	printf("=======\nDataBaseManager QUIT======\n");
 	
 	
 	return 0;
