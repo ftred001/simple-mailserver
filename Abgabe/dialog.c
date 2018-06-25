@@ -21,12 +21,14 @@ int validator(DialogRec *d) {
 }
 
 DialogRec dialog[] = {
-	/* Command,			Param, 	State,	Next-State,	Validator */
-	{ "BEGIN", 			"",		0,		1,			validate_noparam },
-	{ "kuehlschrank",	"",		1,		1,			validate_onoff },
-	{ "fernseher", 		"", 	1,		1,			validate_onoff },
-	{ "toaster", 		"", 	1,		1},
-	{ "END", 			"", 	1,		2,			validate_noparam },
+	/* Command,		Param, 	State,	Next-State,	Validator */
+	{ "user", 		"",		0,		0,			validate_username },
+	{ "pass",		"",		0,		1,			validate_password },
+	{ "stat", 		"", 	1,		1,			validate_noparam },
+	{ "list", 		"", 	1,		1,			},
+	{ "list", 		"", 	1,		2,			validate_noparam },
+	{ "retr", 		"",		1,		1,			validate_messagenumber},
+	{ "QUIT",		"",		1,		2,			validate_noparam },
 	{ "" }
 };
 
@@ -92,22 +94,31 @@ void printRes(ProlResult res) {
 
 int main(void) {
 	ProlResult res;
-	char line[LINEMAX] = "BEGIN";
-	char line2[LINEMAX] = "Toaster forever";
-	char line3[LINEMAX] = "fernseher on";
-	char line4[LINEMAX] = "END";
-	char line5[LINEMAX] = "BEGIN";
+	char line[LINEMAX] = "user joendhard";
+	char line2[LINEMAX] = "password joendhard";
+	char line3[LINEMAX] = "stat";
+	char line4[LINEMAX] = "list 1";
+	char line5[LINEMAX] = "list";
+	char line6[LINEMAX] = "retr 1";
+	char line7[LINEMAX] = "QUIT";
 
 	res = processLine(line, globalstate, dialog);
 	printRes(res);
 	res = processLine(line2, globalstate, dialog);
 	printRes(res);
+	
+	/*
 	res = processLine(line3, globalstate, dialog);
 	printRes(res);
 	res = processLine(line4, globalstate, dialog);
 	printRes(res);
 	res = processLine(line5, globalstate, dialog);
 	printRes(res);
+	res = processLine(line6, globalstate, dialog);
+	printRes(res);
+	res = processLine(line7, globalstate, dialog);
+	printRes(res);
+	*/
 	
 	return 0;
 }

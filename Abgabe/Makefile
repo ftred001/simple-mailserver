@@ -1,12 +1,15 @@
 CC = gcc
 CFLAGS = -g -ansi -pedantic -Wall
 	
-fileindex: fileindex.c linebuffer.c
-	$(CC) $(CFLAGS) -o fileindex fileindex.c linebuffer.c 
+database: database.c
+	$(CC) $(CFLAGS) database.c -o database
+	
+dbm: dbm.c database.c
+	$(CC) $(CFLAGS) -o dbm dbm.c database.c 
 
-run: fileindex
-	./fileindex joendhard.mbox
+run: dbm
+	./dbm
 
 
 clean:
-	rm fileindex
+	rm dbm
