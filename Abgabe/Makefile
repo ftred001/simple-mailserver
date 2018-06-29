@@ -7,7 +7,7 @@ database: database.c
 dbm: dbm.c database.c dialog.c
 	$(CC) $(CFLAGS) -o dbm dbm.c database.c dialog.c
 	
-pop: pop3.c dialog.c linebuffer.c database.c
+pop3: pop3.c dialog.c linebuffer.c database.c
 	$(CC) $(CFLAGS) -o pop3 pop3.c dialog.c linebuffer.c database.c
 	
 testlb: testlb.c linebuffer.c

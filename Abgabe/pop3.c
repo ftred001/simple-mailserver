@@ -20,15 +20,17 @@ int process_pop3(int infd, int outfd) {
 	if (infd<0) { perror("Bei Oeffnen der Eingabedatei");exit(2);}
 	
 	b = buf_new(infd, line_separator);
-	while((buf_readline(b, line, LINEMAX)) !=-1) {
+	if(buf_readline(b, line, LINEMAX) !=-1) {
 		printf("Input: %s\n", line);
+		if (line[0] == EOF) {
+			return 0;
+		}
 	}
-	
-	
+	buf_dispose(b);
 
 
 	if (outfd<0) { perror("Bei Oeffnen der Ausgabedatei");exit(3);}
-	return 0;
+	return 1;
 }
 
 /* Test-Main für POP3-Protokoll. */

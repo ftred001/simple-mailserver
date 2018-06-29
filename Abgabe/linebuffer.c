@@ -22,15 +22,15 @@ LineBuffer *buf_new(int descriptor, const char *linesep) {
 }
 
 void buf_dispose(LineBuffer *lb) {
-	printf(">>>buf_dispose(LineBuffer *lb)\n");
+	/* printf(">>>buf_dispose(LineBuffer *lb)\n"); 
 	
 	if (lb == NULL) {
 		printf("---Nothing to dispose. *lb == NULL\n");
-	}
+	} */
 	
 	free(lb);
 
-	printf("---Disposing succesful!\n");
+	/* printf("---Disposing succesful!\n"); */
 }
 
 void print_buffer(LineBuffer *lb) {
@@ -50,7 +50,7 @@ int fill_buffer(LineBuffer *b, int linemax) {
 	
 	
 	if (b->here == b->end) {
-		printf("FILL BUFFER\n");
+		/* printf("FILL BUFFER\n"); */
 		b->end = read(b->descriptor, b->buffer, linemax);
 		if (b->end == 0) {
 			/* Dateiende */
@@ -62,7 +62,7 @@ int fill_buffer(LineBuffer *b, int linemax) {
 		}	
 		b->bytesread += b->end;
 		b->here = 0;
-		print_buffer(b);
+		/* print_buffer(b); */
 	} 
 	
 	return b->end;
