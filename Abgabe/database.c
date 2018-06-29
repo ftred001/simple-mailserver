@@ -202,7 +202,7 @@ int db_update(const char *filepath, const DBRecord *new) {
     
     printf("======UPDATE======\n");
 	
-    search_result = db_search(filepath, 0, new);
+    search_result = db_search(filepath, 0, (DBRecord*) new);
     
     if (search_result != -42) {
 		printf("Datensatz gefunden bei %d \n",search_result);

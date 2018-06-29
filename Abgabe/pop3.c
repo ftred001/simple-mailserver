@@ -4,33 +4,31 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h> /* STDIN_FILENO, STDOUT_FILENO */
-#include "dbm.h"
+#include "dialog.h"
 #include "linebuffer.h"
+#include "database.h"
+
 
 
 /* Liest POP3 Kommands über infd */
 /* Serverausgabe auf outfd. Schließen mit \r\n ab!!! */
 int process_pop3(int infd, int outfd) {
-	int gelesen;
-	const char IN_SEPARATOR = "\n";
-	const char END_SEPARATOR = "\r\ņ";
-	char line* = calloc(1, LINE_MAX);
+	const char *line_separator = "\n";
+	char *line = calloc(1, LINEMAX);
 	LineBuffer *b;
 	
 	if (infd<0) { perror("Bei Oeffnen der Eingabedatei");exit(2);}
-	LineBuffer *b = buf_new(infd, IN_SEPARATOR);
-	buf_readline(b, line, LINE_MAX);
+	
+	b = buf_new(infd, line_separator);
+	while((buf_readline(b, line, LINEMAX)) !=-1) {
+		printf("Input: %s\n", line);
+	}
 	
 	
 
 
 	if (outfd<0) { perror("Bei Oeffnen der Ausgabedatei");exit(3);}
-	
-	while(1) {
-		gelesen = read(infd, buffer, BUFFSIZE);
-	}
-	
-	
+	return 0;
 }
 
 /* Test-Main für POP3-Protokoll. */

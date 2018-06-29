@@ -2,6 +2,7 @@
 #include <string.h>
 #include <strings.h>
 #include "dialog.h"
+#include "dbm.h"
 
 int globalstate = 0;
 

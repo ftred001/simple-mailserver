@@ -50,7 +50,7 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	DBRecord rec;
 	char *errstring;
 	char delimiter[] = " ";
-	char *argv[10];
+	char *argv[10]; /* Maximale Anzahl an Parametern. */
 	char *wort;
 	
 	line[strlen(line)-1] = '\0';
@@ -65,14 +65,13 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	}
 	
 	
-	/* Testausgabe von argv 
-	for(i=0;i<argc;i++) {
-		printf("%d | Len: %ld  String: %sX\n", i, strlen(argv[i]), argv[i]);
-	} */
-	
-	
 	/* Erstellt Datei, falls nicht existiert */
-	fd = open(filepath, O_RDONLY|O_CREAT,0644);
+	if (strlen(filepath)) {
+		fd = open(filepath, O_RDONLY|O_CREAT,0644);
+	} else {
+		fd = open(STD_FILEPATH, O_RDONLY|O_CREAT,0644);
+	}
+	
 	close(fd);
 
 	
@@ -146,7 +145,6 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 }
 
 int main(int argc, char *argv[]) {
-	const char *filepath = "serversettings.cfg";
 	char *line = calloc(LINEMAX, sizeof(char));
 	char *mem = calloc(LINEMAX, sizeof(char));
 	int linecounter;
@@ -165,10 +163,9 @@ int main(int argc, char *argv[]) {
 	
 		while(wort != NULL) {
 			linecounter++;
-			printf("argc: %d\n", linecounter);
 			wort = strtok(NULL, delimiter);
 		}
-		execute_cmd(filepath, linecounter, mem);
+		execute_cmd("", linecounter, mem);
 	}
 	
 	printf("=======\nDataBaseManager QUIT======\n");
