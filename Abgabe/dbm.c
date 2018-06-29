@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "database.h"
-#include "dialog.h"
 
 
 int speichern(int fd, DBRecord *dbr);

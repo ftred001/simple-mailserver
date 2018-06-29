@@ -106,6 +106,7 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	/* Suche Match von key UND cat */
 	for (i=0; i<data_count; i++) {
 		if ((!strcmp(record->key, record_map[i].key)) && (!strcmp(record->cat, record_map[i].cat))) {
+			strcpy(record->value, record_map[i].value);
 			munmap(record_map, file_length);
 			close(map_fd);
 			return i;
@@ -116,11 +117,13 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	for (i=0; i<data_count; i++){
 		
 		if (!strcmp(record->key, record_map[i].key)) {
+			strcpy(record->value, record_map[i].value);
 			munmap(record_map, file_length);
 			close(map_fd);
 			return i;
 		}
 		if (!strcmp(record->cat, record_map[i].cat)) {
+			strcpy(record->value, record_map[i].value);
 			munmap(record_map, file_length);
 			close(map_fd);
 			return i;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <stdlib.h>
 #include "dialog.h"
 
 int globalstate = 0;
@@ -22,12 +23,14 @@ int validator(DialogRec *d) {
 
 DialogRec dialog[] = {
 	/* Command,		Param, 	State,	Next-State,	Validator */
-	{ "user", 		"",		0,		0,			validate_hasparam },
-	{ "pass",		"",		0,		1,			validate_hasparam },
-	{ "stat", 		"", 	1,		1,			validate_noparam },
-	{ "list", 		"", 	1,		1,			},
-	{ "retr", 		"",		1,		1,			validate_hasparam},
-	{ "QUIT",		"",		1,		2,			validate_noparam },
+	{ "list", 		"",		0,		0,			validate_noparam },
+	{ "user", 		"",		0,		1,			validate_hasparam },
+	{ "list", 		"",		1,		1,			validate_noparam },
+	{ "pass",		"",		1,		2,			validate_hasparam },
+	{ "stat", 		"", 	2,		2,			validate_noparam },
+	{ "list", 		"", 	2,		2,			},
+	{ "retr", 		"",		2,		2,			validate_hasparam},
+	{ "QUIT",		"",		2,		3,			validate_noparam },
 	{ "" }
 };
 

@@ -23,5 +23,7 @@ int db_update(const char *filepath, const DBRecord *new);
 
 int db_del(const char *filepath, int index);
 
+int match_filter(DBRecord *rec, const void *data);
+
 #endif
 
