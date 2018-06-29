@@ -106,34 +106,3 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 void printRes(ProlResult res) {
 	printf("%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
 }
-
-/*
-int main(void) {
-	ProlResult res;
-	char line[LINEMAX] = "user joendhard";
-	char line2[LINEMAX] = "password joendhard";
-	char line3[LINEMAX] = "stat";
-	char line4[LINEMAX] = "list 1";
-	char line5[LINEMAX] = "list";
-	char line6[LINEMAX] = "retr 1";
-	char line7[LINEMAX] = "QUIT";
-
-	res = processLine(line, globalstate, dialog);
-	printRes(res);
-	res = processLine(line2, globalstate, dialog);
-	printRes(res);
-	
-	res = processLine(line3, globalstate, dialog);
-	printRes(res);
-	res = processLine(line4, globalstate, dialog);
-	printRes(res);
-	res = processLine(line5, globalstate, dialog);
-	printRes(res);
-	res = processLine(line6, globalstate, dialog);
-	printRes(res);
-	res = processLine(line7, globalstate, dialog);
-	printRes(res);
-	
-	return 0;
-}
-*/

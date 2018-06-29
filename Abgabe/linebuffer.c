@@ -115,10 +115,6 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 			fill_buffer(b, linemax);
 		}
 	}
-	
-
-	
-	
 	printf("END OF FILE\n");
 	return -1;
 }

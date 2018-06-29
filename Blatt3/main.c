@@ -94,7 +94,7 @@ int test(char *filepath) {
 }
 
 int main(int argc, char *argv[]) {
-	char *filepath = "fischfile.dat";
+	char *filepath = "serversettings.cfg";
 	int fd, search_result;
 	char *std_aquarium = "Gruppenaquarium";
 	int outfd = 1;
