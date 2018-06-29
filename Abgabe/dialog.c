@@ -9,23 +9,8 @@ int validate_noparam(DialogRec *d) {
 	return !!d->param;
 }
 
-int validate_onoff(DialogRec *d) {
-	return !strcmp(d->param, "on") || !strcmp(d->param, "off"); 
-}
-
-int validate_username(DialogRec *d) {
-	/* TODO: IMPLEMENT! */
-	return !!d->param;
-}
-
-int validate_password(DialogRec *d) {
-	/* TODO: IMPLEMENT! */
-	return !!d->param;
-}
-
-int validate_index(DialogRec *d) {
-	/* TODO: IMPLEMENT! */
-	return !!d->param;
+int validate_hasparam(DialogRec *d) {
+	return strlen(d->param);
 }
 
 int validator(DialogRec *d) {
@@ -37,12 +22,11 @@ int validator(DialogRec *d) {
 
 DialogRec dialog[] = {
 	/* Command,		Param, 	State,	Next-State,	Validator */
-	{ "user", 		"",		0,		0,			validate_username },
-	{ "pass",		"",		0,		1,			validate_password },
+	{ "user", 		"",		0,		0,			validate_hasparam },
+	{ "pass",		"",		0,		1,			validate_hasparam },
 	{ "stat", 		"", 	1,		1,			validate_noparam },
 	{ "list", 		"", 	1,		1,			},
-	{ "list", 		"", 	1,		2,			validate_noparam },
-	{ "retr", 		"",		1,		1,			validate_index},
+	{ "retr", 		"",		1,		1,			validate_hasparam},
 	{ "QUIT",		"",		1,		2,			validate_noparam },
 	{ "" }
 };

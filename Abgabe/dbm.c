@@ -144,6 +144,7 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	return 0;
 }
 
+/*
 int main(int argc, char *argv[]) {
 	char *line = calloc(LINEMAX, sizeof(char));
 	char *mem = calloc(LINEMAX, sizeof(char));
@@ -152,13 +153,11 @@ int main(int argc, char *argv[]) {
 	char delimiter[] = " ";
 	
 
-	printf("=========\nWillkommen im DataBaseManager Bitte nutzen Sie tolle Commands!\n===========\n\n");
 	
-	/*  Einlesen bis EOF */
 	while (fgets(line, LINEMAX, stdin) != NULL) {
 		strcpy(mem, line);
 		linecounter = 0;
-		/* Argumente zählen */
+
 		wort = strtok(line, delimiter);
 	
 		while(wort != NULL) {
@@ -172,4 +171,4 @@ int main(int argc, char *argv[]) {
 	
 	
 	return 0;
-}
+} */

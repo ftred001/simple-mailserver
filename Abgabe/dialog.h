@@ -38,5 +38,11 @@ typedef struct pr {
 
 ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]);
 
+int validate_noparam(DialogRec *d);
+int validate_hasparam(DialogRec *d);
+
+void printRes(ProlResult res);
+DialogRec dialog[15];
+
 #endif
 

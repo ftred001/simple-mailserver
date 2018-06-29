@@ -11,8 +11,6 @@
  * To Test: buf_dispose(LineBuffer lb) wirklich freigegeben? 
  */
  
-
-
 LineBuffer *buf_new(int descriptor, const char *linesep) {
 	LineBuffer *lb = calloc(1,sizeof(LineBuffer));
 	lb->descriptor = descriptor;

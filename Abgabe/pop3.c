@@ -4,15 +4,18 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h> /* STDIN_FILENO, STDOUT_FILENO */
+#include <string.h>
 #include "dialog.h"
 #include "linebuffer.h"
 #include "database.h"
 
+int state = 0;
 
 
 /* Liest POP3 Kommands über infd */
 /* Serverausgabe auf outfd. Schließen mit \r\n ab!!! */
 int process_pop3(int infd, int outfd) {
+	ProlResult res;
 	const char *line_separator = "\n";
 	char *line = calloc(1, LINEMAX);
 	LineBuffer *b;
@@ -22,9 +25,22 @@ int process_pop3(int infd, int outfd) {
 	b = buf_new(infd, line_separator);
 	if(buf_readline(b, line, LINEMAX) !=-1) {
 		printf("Input: %s\n", line);
+		
+		/* Abbruchbedingung */
 		if (line[0] == EOF) {
 			return 0;
 		}
+		
+		/* Schneide \n ab */
+		line[strlen(line)] = '\0';
+		
+		res = processLine(line, state, dialog);
+		
+		
+		
+		printRes(res);
+		
+		
 	}
 	buf_dispose(b);
 
