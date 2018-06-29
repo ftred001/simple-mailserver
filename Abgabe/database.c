@@ -95,14 +95,26 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	unsigned long data_count;
 	DBRecord *record_map;
 	
+	printf("---DB_SEARCH---\n");
 	map_fd = open(filepath, O_RDONLY, 0644);
 	file_length = lseek(map_fd, 0, SEEK_END);
 	
 	data_count = file_length / sizeof(DBRecord);
 	
-	record_map = mmap(0,file_length, PROT_READ|PROT_WRITE, MAP_SHARED, map_fd, 0);
+	record_map = mmap(0,file_length, PROT_READ, MAP_SHARED, map_fd, 0);
 
+	/* Suche Match von key UND cat */
 	for (i=0; i<data_count; i++) {
+		if ((!strcmp(record->key, record_map[i].key)) && (!strcmp(record->cat, record_map[i].cat))) {
+			munmap(record_map, file_length);
+			close(map_fd);
+			return i;
+		}
+	}
+	
+	/* Suche Match von key ODER cat */
+	for (i=0; i<data_count; i++){
+		
 		if (!strcmp(record->key, record_map[i].key)) {
 			munmap(record_map, file_length);
 			close(map_fd);
@@ -186,23 +198,20 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 
 /* Aktualisiert Value von gefundenem Datensatz oder fügt Datensatz ein. */
 int db_update(const char *filepath, const DBRecord *new) {
-	int search_result, index=-1;
-	DBRecord *copy = calloc(0,sizeof(DBRecord));
+	int search_result;
     
     printf("======UPDATE======\n");
 	
-	strcpy(copy->key, new->key);
-	strcpy(copy->cat, new->cat);
-	strcpy(copy->value, new->value);
-	
-	
-    search_result = db_search(filepath, 0, copy);
+    search_result = db_search(filepath, 0, new);
     
     if (search_result != -42) {
-		db_put(filepath, search_result, copy);
+		printf("Datensatz gefunden bei %d \n",search_result);
+		db_put(filepath, search_result, new);
+	} else {
+		return -1;
 	}
         
-	return index;
+	return 0;
 }
 
 
@@ -213,7 +222,7 @@ int db_del(const char *filepath, int index) {
 	char *cachepath = "cachedatei";
 
 	DBRecord *record_map;
-	DBRecord *copy_rec = calloc(0, sizeof(DBRecord));
+	DBRecord *copy_rec = calloc(1, sizeof(DBRecord));
 
 	
 	printf("========DELETE OPERATION========\nDELETE RECORD at Index: %d \n\n", index);
