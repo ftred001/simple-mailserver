@@ -9,11 +9,14 @@ dbm: dbm.c database.c dialog.c
 	
 pop: pop3.c dialog.c linebuffer.c database.c
 	$(CC) $(CFLAGS) -o pop3 pop3.c dialog.c linebuffer.c database.c
-
-run: dbm
-	./dbm
+	
+testlb: testlb.c linebuffer.c
+	$(CC) $(CFLAGS) -o testlb testlb.c linebuffer.c
+	
+run: pop3
+	./pop3
 
 
 clean:
-	rm dbm
 	rm pop3
+	rm dbm

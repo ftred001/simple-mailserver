@@ -14,9 +14,8 @@
 
 
 LineBuffer *buf_new(int descriptor, const char *linesep) {
-	LineBuffer *lb = (LineBuffer*)calloc(1,sizeof(LineBuffer));
+	LineBuffer *lb = calloc(1,sizeof(LineBuffer));
 	lb->descriptor = descriptor;
-	lb->linesep = calloc(1, strlen(linesep));
 	lb->linesep = linesep;
 	lb->lineseplen = strlen(linesep);
 	return lb;
@@ -24,16 +23,14 @@ LineBuffer *buf_new(int descriptor, const char *linesep) {
 
 void buf_dispose(LineBuffer *lb) {
 	printf(">>>buf_dispose(LineBuffer *lb)\n");
+	
 	if (lb == NULL) {
 		printf("---Nothing to dispose. *lb == NULL\n");
 	}
-	free(lb);
-	if (!lb) {
-		printf("---Disposing succesful!\n");
-	} else {
-		print_buffer(lb);
-	}
 	
+	free(lb);
+
+	printf("---Disposing succesful!\n");
 }
 
 void print_buffer(LineBuffer *lb) {
