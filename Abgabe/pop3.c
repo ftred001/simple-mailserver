@@ -17,9 +17,7 @@ char *mailbox;
 
 DialogRec dialogspec[] = {
 	/* Command,		Param, 	State,	Next-State,	Validator */
-	{ "list", 		"",		0,		0,			validate_noparam },
 	{ "user", 		"",		0,		1,			validate_hasparam },
-	{ "list", 		"",		1,		1,			validate_noparam },
 	{ "pass",		"",		1,		2,			validate_hasparam },
 	{ "stat", 		"", 	2,		2,			validate_noparam },
 	{ "list", 		"", 	2,		2,			},
@@ -68,7 +66,7 @@ int process_pop3(int infd, int outfd) {
 		line[strlen(line)] = '\0';
 		
 		prolRes = processLine(line, state, dialogspec);
-        
+        state = prolRes.dialogrec->nextstate;
         printf("PROL RESULT NACH PROCESSLINE\n");
         printRes(prolRes);
 		
@@ -84,7 +82,7 @@ int process_pop3(int infd, int outfd) {
 			strcpy(dbRec->cat, "mailbox");
 			db_search(STD_FILEPATH, 0, dbRec);
 			
-			printf("prolprolResult mbox: %s\n", dbRec->value);
+			printf("prolprolResult user: %s\n", dbRec->value);
             username = calloc(1, sizeof(char) * LINEMAX);
 			strcpy(username, dbRec->value);
 		}
@@ -92,9 +90,11 @@ int process_pop3(int infd, int outfd) {
 		if (!strcmp(prolRes.dialogrec->command, "pass")) {
 			strcpy(dbRec->key, username);
 			strcpy(dbRec->cat, "password");
+            printf("VERSUCHE PASSWORT ZU VERGLEICHEN!");
 			db_search(STD_FILEPATH, 0, dbRec);
+            
+            printf("prolResult pass: %s\n", dbRec->value);
 			
-			printf("Result Password: %s\n", dbRec->value);
 		}
 		
 		

@@ -28,38 +28,52 @@ int validator(DialogRec *d) {
 
 /* Returns DialogRec if found. Else NULL */
 DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
- 	DialogRec *dialogrec = NULL;
+ 	DialogRec *dialogrec = (DialogRec*)calloc(1, sizeof(DialogRec));
     int i;
+    
+    printf("DialogRec *findDialogRec(char *cmd, DialogRec dialogspec[])\n");
+    printf("command: %s\n----\n", command);
     
 	for (i=0; i<CMDMAX; i++) {
 		if (strlen(dialogspec[i].command)) {
 			if (!(strcasecmp(command, dialogspec[i].command))) {
+                printf("Gefundener DialogSpec Command: %s\n----\n", dialogspec[i].command);
                 dialogrec = &dialogspec[i];
 				break;
 			}
 		}
 	}
-	return dialogrec;
+    if (dialogrec != NULL) {
+        return dialogrec;
+    }
+	return NULL;
 }
 
 
 ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 	ProlResult result;
-	DialogRec *drecord;
-	char *divider = " ";
-	char *cmd;
+	DialogRec *drecord = (DialogRec*)calloc(1, sizeof(DialogRec));
+	char *cmd = (char*)calloc(CMDMAX, sizeof(char));
 	char *param = line;
 	char infomsg[GRMSGMAX];
 	
 	result.dialogrec = NULL;
 	result.failed = 1;
+    
+    printf("processLine()\nLine: %s, state: %d\n-----\n", line,state);
 	
-	cmd = __strtok_r(param, divider, &param);
+	cmd = __strtok_r(param, " ", &param);
+    
+    printf("cmd strtok: %s\n",cmd);
+    
     drecord = findDialogRec(line, dialogspec);
 	
 	if (drecord !=NULL) {
 		/* Check if global state and CMD-State drecord */
+        
+        printf("DRecord-State: %d ÜbergebenerState: %d\n----\n", drecord->state, state);
 		if (drecord->state == state) {
+            printf("drecord->state == übergebener State\n");
 			strcpy(drecord->param, param);
 			
 			/* Validate params */
@@ -83,6 +97,7 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 		strcpy(result.info, infomsg);
 	}
     memset(line, 0, strlen(line));
+    free(cmd);
 	return result;
 }
 
