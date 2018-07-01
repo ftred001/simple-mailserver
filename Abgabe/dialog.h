@@ -42,7 +42,6 @@ int validate_noparam(DialogRec *d);
 int validate_hasparam(DialogRec *d);
 
 void printRes(ProlResult res);
-DialogRec dialog[15];
 
 #endif
 

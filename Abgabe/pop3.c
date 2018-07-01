@@ -12,6 +12,21 @@
 
 int state = 0;
 const char *STD_FILEPATH = "serversettings.cfg";
+char *username;
+char *mailbox;
+
+DialogRec dialogspec[] = {
+	/* Command,		Param, 	State,	Next-State,	Validator */
+	{ "list", 		"",		0,		0,			validate_noparam },
+	{ "user", 		"",		0,		1,			validate_hasparam },
+	{ "list", 		"",		1,		1,			validate_noparam },
+	{ "pass",		"",		1,		2,			validate_hasparam },
+	{ "stat", 		"", 	2,		2,			validate_noparam },
+	{ "list", 		"", 	2,		2,			},
+	{ "retr", 		"",		2,		2,			validate_hasparam},
+	{ "QUIT",		"",		2,		3,			validate_noparam },
+	{ "" }
+};
 
 
 int match_filter(DBRecord *rec, const void *data) {
@@ -32,9 +47,8 @@ int match_filter(DBRecord *rec, const void *data) {
 /* Liest POP3 Kommands über infd */
 /* Serverausgabe auf outfd. Schließen mit \r\n ab!!! */
 int process_pop3(int infd, int outfd) {
-	ProlResult res;
-	DBRecord *rec = calloc(1, sizeof(DBRecord));
-	char *username = calloc(1, sizeof(char) * LINEMAX);
+	ProlResult prolRes;
+	DBRecord *dbRec = calloc(1, sizeof(DBRecord));
 	const char *line_separator = "\n";
 	char *line = calloc(1, LINEMAX);
 	LineBuffer *b;
@@ -53,37 +67,41 @@ int process_pop3(int infd, int outfd) {
 		/* Schneide \n ab */
 		line[strlen(line)] = '\0';
 		
-		res = processLine(line, state, dialog);
-	
-		printRes(res);
-		printf("Param: %s\n", res.dialogrec->param);
+		prolRes = processLine(line, state, dialogspec);
+        
+        printf("PROL RESULT NACH PROCESSLINE\n");
+        printRes(prolRes);
 		
-		if (!strcmp(res.dialogrec->command, "list")) {
+		
+		if (!strcmp(prolRes.dialogrec->command, "list")) {
 			printf("===LIST ALL===\n");
 			db_list(STD_FILEPATH, outfd, match_filter, "");
 			
 		}
 		
-		if (!strcmp(res.dialogrec->command, "user")) {
-			strcpy(rec->key, res.dialogrec->param);
-			strcpy(rec->cat, "mailbox");
-			db_search(STD_FILEPATH, 0, rec);
+		if (!strcmp(prolRes.dialogrec->command, "user")) {
+			strcpy(dbRec->key, prolRes.dialogrec->param);
+			strcpy(dbRec->cat, "mailbox");
+			db_search(STD_FILEPATH, 0, dbRec);
 			
-			printf("Result mbox: %s\n", rec->value);
-			strcpy(username, rec->value);
+			printf("prolprolResult mbox: %s\n", dbRec->value);
+            username = calloc(1, sizeof(char) * LINEMAX);
+			strcpy(username, dbRec->value);
 		}
 		
-		if (!strcmp(res.dialogrec->command, "pass")) {
-			strcpy(rec->key, username);
-			strcpy(rec->cat, "password");
-			db_search(STD_FILEPATH, 0, rec);
+		if (!strcmp(prolRes.dialogrec->command, "pass")) {
+			strcpy(dbRec->key, username);
+			strcpy(dbRec->cat, "password");
+			db_search(STD_FILEPATH, 0, dbRec);
 			
-			printf("Result Password: %s\n", rec->value);
+			printf("Result Password: %s\n", dbRec->value);
 		}
 		
 		
 	}
+
 	buf_dispose(b);
+    free(dbRec);
 
 
 	if (outfd<0) { perror("Bei Oeffnen der Ausgabedatei");exit(3);}
@@ -92,7 +110,7 @@ int process_pop3(int infd, int outfd) {
 
 /* Test-Main für POP3-Protokoll. */
 int main(void) {
-
+    printf("POP3 Server started.\nAvailable Commands:list\nuser\npass\n");
 	while(process_pop3(STDIN_FILENO, STDOUT_FILENO)) {
 		
 	}

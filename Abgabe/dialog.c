@@ -7,7 +7,11 @@
 int globalstate = 0;
 
 int validate_noparam(DialogRec *d) {
-	return !!d->param;
+    if(strlen(d->param) == 0) {
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 int validate_hasparam(DialogRec *d) {
@@ -21,30 +25,21 @@ int validator(DialogRec *d) {
 	return 1;
 }
 
-DialogRec dialog[] = {
-	/* Command,		Param, 	State,	Next-State,	Validator */
-	{ "list", 		"",		0,		0,			validate_noparam },
-	{ "user", 		"",		0,		1,			validate_hasparam },
-	{ "list", 		"",		1,		1,			validate_noparam },
-	{ "pass",		"",		1,		2,			validate_hasparam },
-	{ "stat", 		"", 	2,		2,			validate_noparam },
-	{ "list", 		"", 	2,		2,			},
-	{ "retr", 		"",		2,		2,			validate_hasparam},
-	{ "QUIT",		"",		2,		3,			validate_noparam },
-	{ "" }
-};
 
 /* Returns DialogRec if found. Else NULL */
 DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
- 	int i;
+ 	DialogRec *dialogrec = NULL;
+    int i;
+    
 	for (i=0; i<CMDMAX; i++) {
 		if (strlen(dialogspec[i].command)) {
 			if (!(strcasecmp(command, dialogspec[i].command))) {
-				return &dialogspec[i];
+                dialogrec = &dialogspec[i];
+				break;
 			}
 		}
 	}
-	return NULL;
+	return dialogrec;
 }
 
 
@@ -52,31 +47,31 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 	ProlResult result;
 	DialogRec *drecord;
 	char *divider = " ";
-	char *token;
+	char *cmd;
 	char *param = line;
 	char infomsg[GRMSGMAX];
 	
 	result.dialogrec = NULL;
 	result.failed = 1;
 	
-	token = __strtok_r(param, divider, &param);
+	cmd = __strtok_r(param, divider, &param);
+    drecord = findDialogRec(line, dialogspec);
 	
-	drecord = findDialogRec(token, dialogspec);
 	if (drecord !=NULL) {
 		/* Check if global state and CMD-State drecord */
 		if (drecord->state == state) {
 			strcpy(drecord->param, param);
 			
 			/* Validate params */
-			if (validator(drecord)) {
+			if (drecord->validator != NULL) {
 				/* Lineprocessing successful */
-				drecord->is_valid = 1;
+				drecord->is_valid = validator(drecord);
 				result.failed = 0;
 				strcpy(result.info, "OK");
-				result.dialogrec = dialogspec;
+				result.dialogrec = drecord;
 				globalstate = drecord->nextstate;
 			} else {
-				drecord->is_valid = 0;
+				drecord->is_valid = 1;
 				strcpy(result.info, "Validation failed\n");
 			}
 		} else {
@@ -84,12 +79,14 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 		}
 	} else {
 		strcpy(infomsg, "The following command was not found: ");
-		strcat(infomsg, token);
+		strcat(infomsg, cmd);
 		strcpy(result.info, infomsg);
 	}
+    memset(line, 0, strlen(line));
 	return result;
 }
 
 void printRes(ProlResult res) {
 	printf("%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
+    printf("ProlRes.DialogRec CMD: %s  PARAM: %s\n", res.dialogrec->command, res.dialogrec->param);
 }
