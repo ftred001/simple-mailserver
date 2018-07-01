@@ -7,6 +7,8 @@
 #include <string.h>
 
 #include "database.h"
+#include "dialog.h"
+#include "dbm.h"
 
 
 int speichern(int fd, DBRecord *dbr);
@@ -143,7 +145,7 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	return 0;
 }
 
-/*
+
 int main(int argc, char *argv[]) {
 	char *line = calloc(LINEMAX, sizeof(char));
 	char *mem = calloc(LINEMAX, sizeof(char));
@@ -163,11 +165,11 @@ int main(int argc, char *argv[]) {
 			linecounter++;
 			wort = strtok(NULL, delimiter);
 		}
-		execute_cmd("", linecounter, mem);
+		execute_cmd(STD_FILEPATH, linecounter, mem);
 	}
 	
 	printf("=======\nDataBaseManager QUIT======\n");
 	
 	
 	return 0;
-} */
+}

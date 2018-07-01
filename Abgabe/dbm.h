@@ -1,7 +1,7 @@
 #ifndef DBM_H
 #define DBM_H
 
-#define STD_FILEPATH "server.db"
+#define STD_FILEPATH "mailserver.db"
 
 int match_filter(DBRecord *rec, const void *data);
 int key_filter(DBRecord *rec, const void *data);

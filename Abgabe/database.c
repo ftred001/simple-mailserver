@@ -20,27 +20,47 @@ int speichern(int fd, DBRecord *dbr) {
 
 int db_list(const char *path, int outfd, 
   int (*filter)(DBRecord *rec, const void *data), const void *data) {
-	/* TODO: Fehlerfälle einarbeiten. */
-	int in_fd, file_length,i,s;
+	/* TODO: Fehlerfälle prüfen. */
+	int infd, file_length,i,s;
 	int key_rest, cat_rest, value_rest;
 	unsigned long data_count;
 	DBRecord *record_map;
-	char *zeile = malloc(sizeof(DBRecord)+ 8);
+	char *zeile = (char*)calloc(1, sizeof(DBRecord)+ 8);
 	char *separator = "|";
 	int filter_res = 2;
-	zeile  = strcpy(zeile,"");
 	
-	in_fd = open(path, O_RDONLY);
-	file_length = lseek(in_fd,0, SEEK_END);
+    printf("LIST FILE: %s",path);
+	
+    if (strlen(path)==0) {
+        printf("ERROR: strlen(path) == 0!\n");
+        free(zeile);
+        return -42;
+    }
     
-    if (file_length == 0) {
-        close(in_fd);
+	infd = open(path, O_RDONLY);
+    
+    if (infd < 0) {
+        perror("Bei Oeffnen der Eingabedatei");
+        free(zeile);
+        return -42;
+    }
+    
+	file_length = lseek(infd,0, SEEK_END);
+    
+    if (file_length < 0) {
+        perror("Beim Lesen der Eingabedatei");
+        close(infd);
+        free(zeile);
+        return -42;
+    }
+    
+    if (outfd < 1) {
+        perror("Schreibdatei ungültig: <1");
         return -42;
     }
 	
-	data_count = file_length / sizeof(DBRecord);
-	
-	record_map = mmap(0, file_length, PROT_READ, MAP_SHARED, in_fd, 0);
+	data_count = file_length / sizeof(DBRecord);	
+	record_map = mmap(0, file_length, PROT_READ, MAP_SHARED, infd, 0);
 		
 	
 	/* Format String List */
@@ -72,20 +92,21 @@ int db_list(const char *path, int outfd,
 			}
 			zeile = strcat(zeile, separator);
 			zeile = strcat(zeile, "\n");
+            
+            /* Schreibe Ergebnis in outfd */
+            if (write(outfd, zeile, sizeof(zeile)) <0) {
+                perror("speichern (write)");
+            }
 		}
+
 	}
 	
-	if (filter_res != 2) {
-		printf("==========DB List==========\n-------Filter: Ja-------\n%s \n", zeile);
-	} else {
-		printf("==========DB List==========\n-------Filter: Nein-------\n%s \n", zeile);
-	}
-	
+
 	
 	munmap(record_map, file_length);
-    close(in_fd);
+    close(infd);
     
-	return -1;
+	return data_count;
 }
 
 /* Sucht Inhalt ab Offset und gibt Index zurück. */
@@ -98,40 +119,35 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	printf("---DB_SEARCH---\n");
     
     if (record == NULL) {
-        printf("RECORD ERROR: record == NULL!\n");
+        perror("DBRecord ist NULL");
         return -42;
     }
     
     if (start < 0) {
-        printf("INDEX ERROR: int<0!\n");
+        perror("INDEX ERROR: int<0!");
         return -42;
     }
     
     if (strlen(filepath)<1) {
-        printf("Filepath Error! strlen(filepath)<1!\n");
+        perror("Filepath Error! strlen(filepath)<1!");
         return -42;
     }
     
 	map_fd = open(filepath, O_RDONLY, 0644);
     
     if (map_fd<0) {
-        printf("Filedeskriptor Error! <0 \n");
+        perror("Filedeskriptor Error! <0");
         return -42;
     }
     
 	file_length = lseek(map_fd, 0, SEEK_END);
     
     if (file_length <0) {
-        printf("Filelenght Error! <0\n");
+        perror("Filelength Error! <0\n");
         return -42;
     }
 	
 	data_count = file_length / sizeof(DBRecord);
-    
-    if (data_count <0) {
-        printf("DataCount Error! <0\n");
-        return -42;
-    }
 	
 	record_map = mmap(0,file_length, PROT_READ, MAP_SHARED, map_fd, 0);
     printf("Key: %s - Cat: %s\n", record->key, record->cat);

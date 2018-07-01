@@ -205,7 +205,7 @@ int fi_compactify(FileIndex *fi) {
 }
 
 
-
+/*
 int main(int argc, char *argv[]) {
 	FileIndex *findex;
 	FileIndexEntry *res;
@@ -236,3 +236,4 @@ int main(int argc, char *argv[]) {
 	
 	return 0;
 }
+*/
