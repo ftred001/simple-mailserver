@@ -80,25 +80,28 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
         
         printf("DRecord-State: %d ÜbergebenerState: %d\n----\n", drecord->state, state);
 		if (drecord->state == state) {
-            printf("drecord->state == übergebener State\n");
+            /* printf("drecord->state == übergebener State\n"); */
 			strcpy(drecord->param, param);
 			
 			/* Validate params */
-			if (drecord->validator != NULL) {
-				/* Lineprocessing successful */
-				drecord->is_valid = validator(drecord);
-				result.failed = 0;
-				strcpy(result.info, "OK");
-				result.dialogrec = drecord;
-				globalstate = drecord->nextstate;
-			} else {
-				drecord->is_valid = 1;
-				strcpy(result.info, "Validation failed\n");
-			}
+            /* Lineprocessing successful */
+            drecord->is_valid = validator(drecord);
+            result.dialogrec = drecord;
+            globalstate = drecord->nextstate;
+            
 		} else {
 			strcpy(result.info, "The global state did not match the command-state.");
 		}
 	}
+    
+    if (!drecord->is_valid) {
+        strcpy(result.info, "Validation failed\n");
+        result.failed = 1;
+    } else {
+        strcpy(result.info, "OK");
+        result.failed = 0;
+    }
+    
     
     memset(line, 0, strlen(line));
     free(cmd);

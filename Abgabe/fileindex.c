@@ -58,7 +58,6 @@ void print_fi(FileIndex *fi) {
 	printf("\n\n");
 }
  
- 
  void print_entries(FileIndex *fi) {
 	FileIndexEntry *e = fi->entries;
 	printf(">>>Print Entries\n");
@@ -102,11 +101,12 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 		findex->totalSize =  buf_where(b); 
 		linestart = buf_where(b) - strlen(line)- b->lineseplen;
 		lineend = buf_where(b);
-		printf("Start: %d End:%d line: %s \n", linestart, lineend,line);
-		
+		/*
+        printf("Start: %d End:%d line: %s \n", linestart, lineend,line);
+		*/
 		/* Sektionsanfang */
 		if (!strncmp(line, "From ", 5)) {
-			printf("---SECTIONSTART---\n");
+			/*printf("---SECTIONSTART---\n"); */
 			
 			findex->nEntries++;
 			
@@ -154,7 +154,7 @@ void fi_dispose(FileIndex *fi) {
 	FileIndexEntry *entry = fi->entries;
 	FileIndexEntry *n;
 	
-	printf(">>>fi_dispose(FileIndex *fi)\n");
+	/* printf(">>>fi_dispose(FileIndex *fi)\n"); */
 	
 	while (entry->next != NULL) {
 		n = entry->next;
@@ -167,7 +167,7 @@ void fi_dispose(FileIndex *fi) {
 	
 	free(fi);
 	fi = NULL;
-	printf("---Disposing Entries succesful!\n");
+	/* printf("---Disposing Entries succesful!\n"); */
 }
 
 /* return Zeiger auf FileIndexEntry zum Listenelement n

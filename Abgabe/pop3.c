@@ -70,6 +70,8 @@ int process_pop3(int infd, int outfd) {
 	const char *line_separator = "\n";
 	char *line = calloc(1, LINEMAX);
 	LineBuffer *b;
+    FileIndexEntry *fi_entry;
+    int msgno;
 
     
 	
@@ -130,34 +132,69 @@ int process_pop3(int infd, int outfd) {
                 printf("===STAT===\nvon Mailbox: %s\n", mailbox);
                 
                 /* FILEINDEX */
-                file_index = fi_new(mailbox, line_separator);
+                if (file_index == NULL) {
+                    file_index = fi_new(mailbox, line_separator);
+                } else {
+                    fi_dispose(file_index);
+                    file_index = fi_new(mailbox, line_separator);
+                }
                 
                 printf("Es gibt %d Mails bei %d Bytes\n", file_index->nEntries, file_index->totalSize);
-                fi_dispose(file_index);
+                
             }
             
             /* 2 list */
             if (!strcmp(prolRes.dialogrec->command, "list")) {
                 printf("===LIST ALL===\n");
-                db_list(mailbox, outfd, match_filter, "");
+                
+                if (file_index == NULL) {
+                    file_index = fi_new(mailbox, line_separator);
+                }
+                
+                if (file_index->entries == NULL) {
+                    perror("Keine Mails vorhanden!");
+                } else {
+                    fi_entry = file_index->entries;
+                    
+                    while(fi_entry) {
+                        printf("%d %d\r\n", fi_entry->nr, fi_entry->size);
+                        fi_entry = fi_entry->next;
+                    }
+                    printf(".\r\n");
+                }
+                
             }
             
             /* 2 list msgno */
             if (!strcmp(prolRes.dialogrec->command, "list")) {
                 printf("===LIST MSG===\n");
-                db_list(mailbox, outfd, match_filter, "");
             }
             
             /* 2 retr msgno */
             if (!strcmp(prolRes.dialogrec->command, "retr")) {
-                printf("===LIST MSG===\n");
-                db_list(mailbox, outfd, match_filter, "");
+                msgno = atoi(prolRes.dialogrec->param);
+                printf("===RETR MSG #%d ===\n", msgno);
+                
+                if (file_index == NULL) {
+                    file_index = fi_new(mailbox, line_separator);
+                }
+                
+                fi_entry = fi_find(file_index, msgno);
+                
+                if (fi_entry != NULL) {
+                    printf("+OK %d octets\n", fi_entry->size);
+                    /* Mit LSEEK oder BUF OFFSET positionieren und dann ausgeben. */
+                    
+                    printf(".\r\n");
+                }
+                
+                
             }
             
             /* 2 quit */
             if (!strcmp(prolRes.dialogrec->command, "quit")) {
                 printf("===QUIT===\n");
-                db_list(mailbox, outfd, match_filter, "");
+                fi_dispose(file_index);
             }
             
             
