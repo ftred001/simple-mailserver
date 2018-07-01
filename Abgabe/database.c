@@ -96,39 +96,75 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	DBRecord *record_map;
 	
 	printf("---DB_SEARCH---\n");
+    
+    if (record == NULL) {
+        printf("RECORD ERROR: record == NULL!\n");
+        return -42;
+    }
+    
+    if (start < 0) {
+        printf("INDEX ERROR: int<0!\n");
+        return -42;
+    }
+    
+    if (strlen(filepath)<1) {
+        printf("Filepath Error! strlen(filepath)<1!\n");
+        return -42;
+    }
+    
 	map_fd = open(filepath, O_RDONLY, 0644);
+    
+    if (map_fd<0) {
+        printf("Filedeskriptor Error! <0 \n");
+        return -42;
+    }
+    
 	file_length = lseek(map_fd, 0, SEEK_END);
+    
+    if (file_length <0) {
+        printf("Filelenght Error! <0\n");
+        return -42;
+    }
 	
 	data_count = file_length / sizeof(DBRecord);
+    
+    if (data_count <0) {
+        printf("DataCount Error! <0\n");
+        return -42;
+    }
 	
 	record_map = mmap(0,file_length, PROT_READ, MAP_SHARED, map_fd, 0);
-
-	/* Suche Match von key UND cat */
-	for (i=0; i<data_count; i++) {
-		if ((!strcmp(record->key, record_map[i].key)) && (!strcmp(record->cat, record_map[i].cat))) {
-			strcpy(record->value, record_map[i].value);
-			munmap(record_map, file_length);
-			close(map_fd);
-			return i;
-		}
-	}
-	
-	/* Suche Match von key ODER cat */
-	for (i=0; i<data_count; i++){
-		
-		if (!strcmp(record->key, record_map[i].key)) {
-			strcpy(record->value, record_map[i].value);
-			munmap(record_map, file_length);
-			close(map_fd);
-			return i;
-		}
-		if (!strcmp(record->cat, record_map[i].cat)) {
-			strcpy(record->value, record_map[i].value);
-			munmap(record_map, file_length);
-			close(map_fd);
-			return i;
-		}
-	}
+    printf("Key: %s - Cat: %s\n", record->key, record->cat);
+    
+    /* Durchsuche Datenbank */
+    for (i=0; i<data_count; i++) {
+        
+        /* Suche Match von key UND cat */
+        if (strlen(record->key) && strlen(record->cat)) {
+            if ((!strcmp(record->key, record_map[i].key)) && (!strcmp(record->cat, record_map[i].cat))) {
+                strcpy(record->value, record_map[i].value);
+                munmap(record_map, file_length);
+                close(map_fd);
+                return i;
+            }
+        } else if (strlen(record->key) && !strlen(record->cat)) {
+            /* Suche wenn nur Key gesetzt ist. */
+            if (!strcmp(record->key, record_map[i].key)) {
+                strcpy(record->value, record_map[i].value);
+                munmap(record_map, file_length);
+                close(map_fd);
+                return i;
+            }
+		} else if(strlen(record->cat) && !strlen(record->key)) {
+            /* Suche nur nach Cat */
+            if (!strcmp(record->cat, record_map[i].cat)) {
+                strcpy(record->value, record_map[i].value);
+                munmap(record_map, file_length);
+                close(map_fd);
+                return i;
+            }
+        }
+    }
     
 	munmap(record_map, file_length);
     close(map_fd);

@@ -46,6 +46,7 @@ int match_filter(DBRecord *rec, const void *data) {
 /* Serverausgabe auf outfd. Schließen mit \r\n ab!!! */
 int process_pop3(int infd, int outfd) {
 	ProlResult prolRes;
+    int db_index;
 	DBRecord *dbRec = calloc(1, sizeof(DBRecord));
 	const char *line_separator = "\n";
 	char *line = calloc(1, LINEMAX);
@@ -61,48 +62,60 @@ int process_pop3(int infd, int outfd) {
 		if (line[0] == EOF) {
 			return 0;
 		}
-		
-		/* Schneide \n ab */
+
 		line[strlen(line)] = '\0';
 		
 		prolRes = processLine(line, state, dialogspec);
-        state = prolRes.dialogrec->nextstate;
-        printf("PROL RESULT NACH PROCESSLINE\n");
-        printRes(prolRes);
-		
-		
-		if (!strcmp(prolRes.dialogrec->command, "list")) {
-			printf("===LIST ALL===\n");
-			db_list(STD_FILEPATH, outfd, match_filter, "");
-			
-		}
-		
-		if (!strcmp(prolRes.dialogrec->command, "user")) {
-			strcpy(dbRec->key, prolRes.dialogrec->param);
-			strcpy(dbRec->cat, "mailbox");
-			db_search(STD_FILEPATH, 0, dbRec);
-			
-			printf("prolprolResult user: %s\n", dbRec->value);
-            username = calloc(1, sizeof(char) * LINEMAX);
-			strcpy(username, dbRec->value);
-		}
-		
-		if (!strcmp(prolRes.dialogrec->command, "pass")) {
-			strcpy(dbRec->key, username);
-			strcpy(dbRec->cat, "password");
-            printf("VERSUCHE PASSWORT ZU VERGLEICHEN!");
-			db_search(STD_FILEPATH, 0, dbRec);
+        
+        if (prolRes.dialogrec != NULL) {
+            state = prolRes.dialogrec->nextstate;
+            printRes(prolRes);
             
-            printf("prolResult pass: %s\n", dbRec->value);
-			
-		}
-		
-		
+            
+            if (!strcmp(prolRes.dialogrec->command, "list")) {
+                printf("===LIST ALL===\n");
+                db_list(STD_FILEPATH, outfd, match_filter, "");
+                
+            }
+            
+            if (!strcmp(prolRes.dialogrec->command, "user")) {
+                strcpy(dbRec->key, prolRes.dialogrec->param);
+                strcpy(dbRec->cat, "mailbox");
+                if ((db_index = db_search(STD_FILEPATH, 0, dbRec)>=0)) {
+                    printf("User gefunden! Mailboxdatei: %s\n", dbRec->value);
+                    username = calloc(1, sizeof(char) * LINEMAX);
+                    strcpy(username, prolRes.dialogrec->param);
+                } else {
+                    printf("User nicht gefunden!\n");
+                    state=0;
+                }
+                
+            }
+            
+            if (!strcmp(prolRes.dialogrec->command, "pass")) {
+                strcpy(dbRec->key, username);
+                strcpy(dbRec->cat, "password");
+                db_search(STD_FILEPATH, 0, dbRec);
+                
+                printf("prolResult pass: %s\n", dbRec->value);
+                if (!strcmp(prolRes.dialogrec->param, dbRec->value)) {
+                    printf("Passwort matches!\n");
+                } else  {
+                    printf("Passwörter stimmen nicht überein!\n");
+                    printf("Bitte probieren Sie es von vorne!\n");
+                    state -=2;
+                }
+                
+            }
+        } else {
+            printf("ProlRes.dialogrec == NULL!\n");
+        }
 	}
 
 	buf_dispose(b);
     free(dbRec);
-
+    
+    printf("====\nState: %d\n====\n", state);
 
 	if (outfd<0) { perror("Bei Oeffnen der Ausgabedatei");exit(3);}
 	return 1;

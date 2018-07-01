@@ -39,14 +39,13 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
 			if (!(strcasecmp(command, dialogspec[i].command))) {
                 printf("Gefundener DialogSpec Command: %s\n----\n", dialogspec[i].command);
                 dialogrec = &dialogspec[i];
-				break;
+                return dialogrec;
 			}
 		}
 	}
-    if (dialogrec != NULL) {
-        return dialogrec;
-    }
-	return NULL;
+    printf("Return DialogRec = NULL!\n");
+    dialogrec = NULL;
+    return dialogrec;
 }
 
 
@@ -67,6 +66,14 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
     printf("cmd strtok: %s\n",cmd);
     
     drecord = findDialogRec(line, dialogspec);
+    
+    if (drecord == NULL) {
+        printf("drecord was NULL!\n");
+		strcpy(infomsg, "The following command was not found: ");
+		strcat(infomsg, cmd);
+		strcpy(result.info, infomsg);
+        return result;
+	}
 	
 	if (drecord !=NULL) {
 		/* Check if global state and CMD-State drecord */
@@ -91,17 +98,14 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 		} else {
 			strcpy(result.info, "The global state did not match the command-state.");
 		}
-	} else {
-		strcpy(infomsg, "The following command was not found: ");
-		strcat(infomsg, cmd);
-		strcpy(result.info, infomsg);
 	}
+    
     memset(line, 0, strlen(line));
     free(cmd);
 	return result;
 }
 
 void printRes(ProlResult res) {
-	printf("%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
+	printf("printRes(ProlResult ):\n%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
     printf("ProlRes.DialogRec CMD: %s  PARAM: %s\n", res.dialogrec->command, res.dialogrec->param);
 }
