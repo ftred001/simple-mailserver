@@ -53,9 +53,10 @@ int process_pop3(int infd, int outfd) {
 	DBRecord *dbRec = calloc(1, sizeof(DBRecord));
 	const char *line_separator = "\n";
 	char *line = (char*)calloc(LINEMAX, sizeof(char));
-	char *msg_line = (char*)calloc(LINEMAX, sizeof(char));
+	char *msg_line;
 	char *response = (char*)calloc(LINEMAX, sizeof(char));
-	LineBuffer *linebuf, *msg_buf;
+	LineBuffer *linebuf;
+	LineBuffer *msg_buf;
     FileIndexEntry *fi_entry;
     int msgno;
     int msg_fd;
@@ -161,8 +162,8 @@ int process_pop3(int infd, int outfd) {
                     fi_entry = file_index->entries;
                     
                     while(fi_entry) {
-                        sprintf(msg_line, "%d %d\r\n", fi_entry->nr, fi_entry->size);
-                        if (write(outfd, msg_line, strlen(msg_line)+1) <0) {
+                        sprintf(response, "%d %d\r\n", fi_entry->nr, fi_entry->size);
+                        if (write(outfd, response, strlen(response)+1) <0) {
 							perror("responding (write)");
 						}
                         fi_entry = fi_entry->next;
@@ -211,7 +212,10 @@ int process_pop3(int infd, int outfd) {
 						perror("Beim Öffnen des Filepaths");
 					}
                     
-                    msg_buf = buf_new(msg_fd,msg_separator);
+                    msg_buf = buf_new(msg_fd,line_separator);
+                    if (msg_buf == NULL) {
+						perror("Beim Allokieren das MSG Buffers");
+					}
                     
                     /* Buffer offsetten */
 					if (buf_seek(msg_buf, fi_entry->seekpos) <0) {
@@ -219,13 +223,18 @@ int process_pop3(int infd, int outfd) {
 					}
 					
 					/* Zeilenweise ausgeben */
-					msg_i =0;
+					msg_i =1;
+					msg_line = (char*)calloc(LINEMAX, sizeof(char));
 					
-					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i < fi_entry->lines)) {
-						msg_line = strcat(msg_line, "\r\n");
-						if (write(outfd, msg_line, LINEMAX) <0) {
-							perror("responding (write)");
+					printf("PRINT RETR\n");
+					
+					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i <= fi_entry->lines)) {
+						sprintf(response, "%s\r\n",msg_line);
+						
+						if (write(outfd, response, strlen(response)+1) <0) {
+							perror("Error bei Write");
 						}
+						
 						msg_line[0] = '\0';
 						msg_i++;
 					}
@@ -239,7 +248,7 @@ int process_pop3(int infd, int outfd) {
             
             /* 2 quit */
             if (!strcmp(prolRes.dialogrec->command, "quit")) {
-                printf("+OK Logging out.\r\n");
+                sprintf(response, "+OK Logging out.\r\n");
                 memset(username, 0, DB_KEYLEN);
                 free(username);
                 memset(mailbox, 0, DB_VALLEN);
@@ -250,12 +259,12 @@ int process_pop3(int infd, int outfd) {
             
             
         } else {
-            printf("ProlRes.dialogrec == NULL!\n");
+            sprintf(response, "-ERR\r\n");
         }
 	}
 	
 	if (write(outfd, response, strlen(response)+1) <0) {
-		perror("responding (write)");
+		sprintf(response, "-ERR\r\n");
 	}
 	
 	buf_dispose(linebuf);
@@ -263,7 +272,7 @@ int process_pop3(int infd, int outfd) {
     memset(response, 0, LINEMAX);
     free(response);
     
-    printf("====\nState: %d\n====\n", state);
+    /* printf("====\nState: %d\n====\n", state); */
 
 	
 	return 1;
