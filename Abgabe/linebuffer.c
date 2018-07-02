@@ -12,7 +12,14 @@
  */
  
 LineBuffer *buf_new(int descriptor, const char *linesep) {
-	LineBuffer *lb = calloc(1,sizeof(LineBuffer));
+	LineBuffer *lb;
+	
+	printf(">>>buf_new(%d)\n", descriptor);
+	if ((lb = (LineBuffer*)calloc(1,sizeof(LineBuffer))) == NULL) {
+		perror("Beim Allokieren des LineBuffers");
+		return NULL;
+	}
+	
 	lb->descriptor = descriptor;
 	lb->linesep = linesep;
 	lb->lineseplen = strlen(linesep);
@@ -20,11 +27,11 @@ LineBuffer *buf_new(int descriptor, const char *linesep) {
 }
 
 void buf_dispose(LineBuffer *lb) {
-	/* printf(">>>buf_dispose(LineBuffer *lb)\n"); 
+	printf(">>>buf_dispose(fd: %d)\n", lb->descriptor); 
 	
 	if (lb == NULL) {
-		printf("---Nothing to dispose. *lb == NULL\n");
-	} */
+		perror("Nothing to dispose");
+	}
 	
 	free(lb);
 

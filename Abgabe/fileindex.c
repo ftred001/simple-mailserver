@@ -80,24 +80,28 @@ void print_fi(FileIndex *fi) {
  * return NULL bei Fehler
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
-	FileIndex *findex;
-	
+	FileIndex *findex = NULL;
 	FileIndexEntry *entry;
 	FileIndexEntry *ptr;
-	char * line;
-	char l[LINEBUFFERSIZE];
-	LineBuffer *b;
+	char *line = (char*)calloc(LINEBUFFERSIZE, sizeof(char));
+	LineBuffer *b = NULL;
 	int fd, umbruch=0;
 	int linestart, lineend;
-	line = l;
+
+	
+	printf("FI_NEW: %s\n", filepath);
 	
 	if ((findex = (FileIndex*)calloc(1, sizeof(FileIndex))) == NULL) {
 		perror("Beim allokieren des Speichers für FileIndex");
+		return NULL;
 	}
 	
 	findex->filepath = filepath;
 	
-	fd = open(filepath, O_RDONLY, 0644);
+	
+	if ((fd=open(filepath, O_RDONLY, 0644))<0) {
+		perror("Beim Öffnen des Filepaths");
+	}
 	
 	b = buf_new(fd, separator);
 	
@@ -106,9 +110,10 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 		findex->totalSize =  buf_where(b); 
 		linestart = buf_where(b) - strlen(line)- b->lineseplen;
 		lineend = buf_where(b);
-		/*
+		
+		printf("buf_where: %d strlen: %ld lineseplen: %d\n", buf_where(b), strlen(line), b->lineseplen);
         printf("Start: %d End:%d line: %s \n", linestart, lineend,line);
-		*/
+		
 		/* Sektionsanfang */
 		if (!strncmp(line, "From ", 5)) {
 			/*printf("---SECTIONSTART---\n"); */
