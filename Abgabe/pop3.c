@@ -25,7 +25,10 @@ DialogRec dialogspec[] = {
 	{ "pass",		"",		1,		2,			validate_hasparam },
 	{ "stat", 		"", 	2,		2,			validate_noparam },
 	{ "list", 		"", 	2,		2,			},
-	{ "retr", 		"",		2,		2,			validate_hasparam},
+	{ "retr", 		"",		2,		2,			validate_hasparam },
+	{ "noop",		"",		2,		2,			validate_noparam },
+	{ "rset",		"",		2,		2,			validate_noparam  },
+	{ "dele",		"",		2,		2,			validate_hasparam },
 	{ "QUIT",		"",		2,		0,			validate_noparam },
 	{ "" }
 };
@@ -116,28 +119,31 @@ int process_pop3(int infd, int outfd) {
 					
 					if ((db_search(STD_FILEPATH, 0, dbRec) < 0)) {
 						perror("Kein Ergebnis");
-						strcpy(response, "-ERR\r\n");
+						sprintf(response, "-ERR\r\n");
 					}
 					
 					
 					if (!strcmp(prolRes.dialogrec->param, dbRec->value)) {
-						printf("+OK Logged in\n");
 						if ((file_index = fi_new(mailbox, line_separator)) == NULL) {
 							perror("Init FileIndex");
-							strcpy(response, "-ERR\r\n");
+							sprintf(response, "-ERR\r\n");
+						} else {
+							sprintf(response, "+OK Logged in\r\n");
 						}
                     
 					} else  {
 						/*printf("-ERR Passwörter stimmen nicht überein!\n");*/
-						strcpy(response, "-ERR\r\n");
+						sprintf(response, "-ERR\r\n");
 						state = 0;
 					}
 				} else  {
-					strcpy(response, "-ERR\r\n");
+					sprintf(response, "-ERR\r\n");
 					/*printf("-ERR User existiert nicht!\n");*/
 					state = 0;
 				}
             }
+            
+
             
             /* 2 stat */
             if (!strcmp(prolRes.dialogrec->command, "stat")) {    
@@ -146,14 +152,7 @@ int process_pop3(int infd, int outfd) {
             
             /* 2 list */
             if (!strcmp(prolRes.dialogrec->command, "list") && (!strlen(prolRes.dialogrec->param))) {
-                
-                if (file_index == NULL) {
-                    file_index = fi_new(mailbox, line_separator);
-                } else {
-                    fi_dispose(file_index);
-                    file_index = fi_new(mailbox, line_separator);
-                }
-                
+                                
                 if (file_index->entries == NULL) {
                     perror("Keine Mails vorhanden!");
                     sprintf(response, "ERR\r\n");
@@ -162,9 +161,11 @@ int process_pop3(int infd, int outfd) {
                     fi_entry = file_index->entries;
                     
                     while(fi_entry) {
-                        sprintf(response, "%d %d\r\n", fi_entry->nr, fi_entry->size);
-                        if (write(outfd, response, strlen(response)+1) <0) {
-							perror("responding (write)");
+						if (fi_entry->del_flag == 0) {
+						    sprintf(response, "%d %d\r\n", fi_entry->nr, fi_entry->size);
+							if (write(outfd, response, strlen(response)+1) <0) {
+								perror("responding (write)");
+							}
 						}
                         fi_entry = fi_entry->next;
                     }
@@ -176,15 +177,16 @@ int process_pop3(int infd, int outfd) {
             /* 2 list msgno */
             if (!strcmp(prolRes.dialogrec->command, "list") && (strlen(prolRes.dialogrec->param))) {
                 msgno = atoi(prolRes.dialogrec->param);
-                
-                if (file_index == NULL) {
-                    file_index = fi_new(mailbox, line_separator);
-                }
-                
+                                
                 fi_entry = fi_find(file_index, msgno);
                 
                 if (fi_entry != NULL) {
-                    sprintf(response,"+OK %d %d\r\n", fi_entry->nr, fi_entry->size);                    
+					if (fi_entry->del_flag == 0) {
+						sprintf(response,"+OK %d %d\r\n", fi_entry->nr, fi_entry->size);  
+					} else {
+						sprintf(response,"-ERR\r\n");
+					}
+                                      
                 }
                 
             }
@@ -193,9 +195,6 @@ int process_pop3(int infd, int outfd) {
             if (!strcmp(prolRes.dialogrec->command, "retr")) {
                 msgno = atoi(prolRes.dialogrec->param);
                 
-                if (file_index == NULL) {
-                    file_index = fi_new(mailbox, line_separator);
-                }
                 
                 fi_entry = fi_find(file_index, msgno);
                 
@@ -243,7 +242,6 @@ int process_pop3(int infd, int outfd) {
                     buf_dispose(msg_buf);
                 }
                 
-                
             }
             
             /* 2 quit */
@@ -258,13 +256,39 @@ int process_pop3(int infd, int outfd) {
             }
             
             
+            /* 2 noop */
+            if (!strcmp(prolRes.dialogrec->command, "noop")) {    
+                sprintf(response, "+OK\r\n");
+            }
+            
+            /* 2 dele msgno */
+            if (!strcmp(prolRes.dialogrec->command, "dele") && (strlen(prolRes.dialogrec->param))) {
+                msgno = atoi(prolRes.dialogrec->param);
+                
+                fi_entry = fi_find(file_index, msgno);
+                
+                if (fi_entry != NULL) {
+					fi_entry->del_flag = 1;
+					file_index->totalSize -= fi_entry->size;
+					file_index->nEntries--;
+                    sprintf(response,"+OK\r\n");                    
+                } else {
+					sprintf(response, "-ERR\r\n");
+				}
+                
+            }
+            
+            
+            
+            
         } else {
             sprintf(response, "-ERR\r\n");
         }
 	}
 	
+	/* Schicke Antwort an OUT_FD */
 	if (write(outfd, response, strlen(response)+1) <0) {
-		sprintf(response, "-ERR\r\n");
+		perror("CRITICAL! Couldnt write to OUTFD");
 	}
 	
 	buf_dispose(linebuf);

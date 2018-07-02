@@ -46,7 +46,7 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
 			}
 		}
 	}
-    printf("Return DialogRec = NULL!\n");
+    /* printf("Return DialogRec = NULL!\n"); */
     dialogrec = NULL;
     return dialogrec;
 }
@@ -62,16 +62,16 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 	result.dialogrec = NULL;
 	result.failed = 1;
     
-    printf("processLine()\nLine: %s, state: %d\n-----\n", line,state);
+    /* printf("processLine()\nLine: %s, state: %d\n-----\n", line,state); */
 	
 	cmd = __strtok_r(param, " ", &param);
     
-    printf("cmd strtok: %s\n",cmd);
+    /* printf("cmd strtok: %s\n",cmd); */
     
     drecord = findDialogRec(line, dialogspec);
     
     if (drecord == NULL) {
-        printf("drecord was NULL!\n");
+        /* printf("drecord was NULL!\n"); */
 		strcpy(infomsg, "The following command was not found: ");
 		strcat(infomsg, cmd);
 		strcpy(result.info, infomsg);
@@ -81,7 +81,7 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 	if (drecord !=NULL) {
 		/* Check if global state and CMD-State drecord */
         
-        printf("DRecord-State: %d ÜbergebenerState: %d\n----\n", drecord->state, state);
+        /* printf("DRecord-State: %d ÜbergebenerState: %d\n----\n", drecord->state, state); */
 		if (drecord->state == state) {
             /* printf("drecord->state == übergebener State\n"); */
 			strcpy(drecord->param, param);
