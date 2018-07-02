@@ -31,13 +31,16 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
  	DialogRec *dialogrec = (DialogRec*)calloc(1, sizeof(DialogRec));
     int i;
     
+    /*
     printf("DialogRec *findDialogRec(char *cmd, DialogRec dialogspec[])\n");
-    printf("command: %s\n----\n", command);
+    printf("command: %s\n----\n", command); */
     
 	for (i=0; i<CMDMAX; i++) {
 		if (strlen(dialogspec[i].command)) {
 			if (!(strcasecmp(command, dialogspec[i].command))) {
-                printf("Gefundener DialogSpec Command: %s\n----\n", dialogspec[i].command);
+                /*
+                 *  printf("Gefundener DialogSpec Command: %s\n----\n", dialogspec[i].command);
+                */
                 dialogrec = &dialogspec[i];
                 return dialogrec;
 			}

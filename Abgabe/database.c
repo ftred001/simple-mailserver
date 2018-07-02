@@ -116,7 +116,9 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	unsigned long data_count;
 	DBRecord *record_map;
 	
+	/*
 	printf("---DB_SEARCH---\n");
+	*/
     
     if (record == NULL) {
         perror("DBRecord ist NULL");
@@ -150,7 +152,7 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 	data_count = file_length / sizeof(DBRecord);
 	
 	record_map = mmap(0,file_length, PROT_READ, MAP_SHARED, map_fd, 0);
-    printf("Key: %s - Cat: %s\n", record->key, record->cat);
+    /* printf("Key: %s - Cat: %s\n", record->key, record->cat); */
     
     /* Durchsuche Datenbank */
     for (i=0; i<data_count; i++) {

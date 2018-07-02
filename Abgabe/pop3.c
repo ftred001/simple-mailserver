@@ -25,7 +25,7 @@ DialogRec dialogspec[] = {
 	{ "stat", 		"", 	2,		2,			validate_noparam },
 	{ "list", 		"", 	2,		2,			},
 	{ "retr", 		"",		2,		2,			validate_hasparam},
-	{ "QUIT",		"",		2,		3,			validate_noparam },
+	{ "QUIT",		"",		2,		0,			validate_noparam },
 	{ "" }
 };
 
@@ -96,58 +96,64 @@ int process_pop3(int infd, int outfd) {
         
         if (prolRes.dialogrec != NULL) {
             state = prolRes.dialogrec->nextstate;
-            printRes(prolRes);
+            /* printRes(prolRes); */
             
             /* 0 User Login */
             if (!strcmp(prolRes.dialogrec->command, "user")) {
                 strcpy(dbRec->key, prolRes.dialogrec->param);
                 strcpy(dbRec->cat, "mailbox");
                 write(outfd, "+OK", 4);
-                if ((db_index = db_search(STD_FILEPATH, 0, dbRec)>=0)) {
-                    username = calloc(1, sizeof(char) * LINEMAX);
-                    strcpy(username, prolRes.dialogrec->param);
-                    mailbox = calloc(1, sizeof(char) * LINEMAX);
-                    strcpy(mailbox, dbRec->value);
-                    
-
-                    
-                } else {
-					/* Soll eigentlich nichts machen und erst in pass überprüfen ob alles OK*/
-                    printf("User nicht gefunden!\n");
-                    state=0;
-                }
                 
+                username = calloc(DB_KEYLEN, sizeof(char));
+                mailbox = calloc(DB_VALLEN, sizeof(char));
+                
+                if ((db_index = db_search(STD_FILEPATH, 0, dbRec)>=0)) {
+
+                    strcpy(username, prolRes.dialogrec->param);
+
+                    strcpy(mailbox, dbRec->value);
+                } else {
+					memset(username, 0, DB_KEYLEN);
+					memset(mailbox, 0, DB_VALLEN);
+				}
             }
             
             /* 1 Passwort */
             if (!strcmp(prolRes.dialogrec->command, "pass")) {
-                strcpy(dbRec->key, username);
-                strcpy(dbRec->cat, "password");
-                db_search(STD_FILEPATH, 0, dbRec);
-                
-                printf("prolResult pass: %s\n", dbRec->value);
-                if (!strcmp(prolRes.dialogrec->param, dbRec->value)) {
-                    printf("+OK Logged in\n");
-                    if ((file_index = fi_new(mailbox, line_separator)) == NULL) {
-						perror("Init FileIndex");
+				printf("Username: %s Password:%s\n", username, prolRes.dialogrec->param);
+				
+				if (strlen(username)) {
+				    strcpy(dbRec->key, username);
+				    strcpy(dbRec->cat, "password");
+					
+					if ((db_search(STD_FILEPATH, 0, dbRec) < 0)) {
+						perror("Kein Ergebnis");
 					}
+					
+					
+					if (!strcmp(prolRes.dialogrec->param, dbRec->value)) {
+						printf("+OK Logged in\n");
+						if ((file_index = fi_new(mailbox, line_separator)) == NULL) {
+							perror("Init FileIndex");
+						}
                     
-                } else  {
-                    printf("-ERR Passwörter stimmen nicht überein!\n");
-                    state -=2;
-                }
+					} else  {
+						printf("-ERR Passwörter stimmen nicht überein!\n");
+						state = 0;
+					}
+				} else  {
+					printf("-ERR User existiert nicht!\n");
+					state = 0;
+				}
             }
             
             /* 2 stat */
-            if (!strcmp(prolRes.dialogrec->command, "stat")) {
-                printf("===STAT von Mailbox: %s===\n", mailbox);               
+            if (!strcmp(prolRes.dialogrec->command, "stat")) {        
                 printf("+OK %d %d\n", file_index->nEntries, file_index->totalSize);
-                
             }
             
             /* 2 list */
             if (!strcmp(prolRes.dialogrec->command, "list") && (!strlen(prolRes.dialogrec->param))) {
-                printf("===LIST ALL===\n");
                 
                 if (file_index == NULL) {
                     file_index = fi_new(mailbox, line_separator);
@@ -174,7 +180,6 @@ int process_pop3(int infd, int outfd) {
             /* 2 list msgno */
             if (!strcmp(prolRes.dialogrec->command, "list") && (strlen(prolRes.dialogrec->param))) {
                 msgno = atoi(prolRes.dialogrec->param);
-                printf("===LIST MSG %d===\n", msgno);
                 
                 if (file_index == NULL) {
                     file_index = fi_new(mailbox, line_separator);
@@ -191,7 +196,6 @@ int process_pop3(int infd, int outfd) {
             /* 2 retr msgno */
             if (!strcmp(prolRes.dialogrec->command, "retr")) {
                 msgno = atoi(prolRes.dialogrec->param);
-                printf("===RETR MSG #%d ===\n", msgno);
                 
                 if (file_index == NULL) {
                     file_index = fi_new(mailbox, line_separator);
@@ -201,8 +205,7 @@ int process_pop3(int infd, int outfd) {
                 
                 if (fi_entry != NULL) {
                     printf("+OK %d octets\n", fi_entry->size);
-                    printf("Offset bei %d\n", fi_entry->seekpos);
-                    
+                   
                     /* neuer Buffer zum Ausgeben der Mail */
                     if ((msg_fd=open(mailbox, O_RDONLY, 0644))<0) {
 						perror("Beim Öffnen des Filepaths");
@@ -225,6 +228,9 @@ int process_pop3(int infd, int outfd) {
 						msg_i++;
 					}
                     printf(".\r\n");
+                    close(msg_fd);
+                    free(msg_line);
+                    buf_dispose(msg_buf);
                 }
                 
                 
@@ -232,7 +238,12 @@ int process_pop3(int infd, int outfd) {
             
             /* 2 quit */
             if (!strcmp(prolRes.dialogrec->command, "quit")) {
-                printf("===QUIT===\n");
+                printf("+OK Logging out.\r\n");
+                memset(username, 0, DB_KEYLEN);
+                free(username);
+                memset(mailbox, 0, DB_VALLEN);
+                free(mailbox);
+                fi_compactify(file_index);           
                 fi_dispose(file_index);
             }
             
@@ -253,7 +264,7 @@ int process_pop3(int infd, int outfd) {
 
 /* Test-Main für POP3-Protokoll. */
 int main(void) {
-    printf("POP3 Server started.\nAvailable Commands:list\nuser\npass\nstat\nlist\nretr\n");
+    printf("POP3 Server started.\nAvailable Commands: list | user | pass | stat | list (#)| retr #\n");
 	while(process_pop3(STDIN_FILENO, STDOUT_FILENO)) {
 		
 	}
