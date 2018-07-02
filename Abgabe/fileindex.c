@@ -80,7 +80,8 @@ void print_fi(FileIndex *fi) {
  * return NULL bei Fehler
  * */
 FileIndex *fi_new(const char *filepath, const char *separator) {
-	FileIndex *findex = calloc(1, sizeof(FileIndex));
+	FileIndex *findex;
+	
 	FileIndexEntry *entry;
 	FileIndexEntry *ptr;
 	char * line;
@@ -89,6 +90,10 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	int fd, umbruch=0;
 	int linestart, lineend;
 	line = l;
+	
+	if ((findex = (FileIndex*)calloc(1, sizeof(FileIndex))) == NULL) {
+		perror("Beim allokieren des Speichers für FileIndex");
+	}
 	
 	findex->filepath = filepath;
 	

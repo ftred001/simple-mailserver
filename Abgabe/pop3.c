@@ -104,6 +104,9 @@ int process_pop3(int infd, int outfd) {
                     strcpy(username, prolRes.dialogrec->param);
                     mailbox = calloc(1, sizeof(char) * LINEMAX);
                     strcpy(mailbox, dbRec->value);
+                    
+
+                    
                 } else {
                     printf("User nicht gefunden!\n");
                     state=0;
@@ -119,19 +122,28 @@ int process_pop3(int infd, int outfd) {
                 
                 printf("prolResult pass: %s\n", dbRec->value);
                 if (!strcmp(prolRes.dialogrec->param, dbRec->value)) {
-                    printf("Passwort matches!\n");
+                    printf("+OK Logged in\n");
+                    if ((file_index = fi_new(mailbox, line_separator)) == NULL) {
+						perror("Init FileIndex");
+					}
+                    
                 } else  {
-                    printf("Passwörter stimmen nicht überein!\n");
-                    printf("Bitte probieren Sie es von vorne!\n");
+                    printf("-ERR Passwörter stimmen nicht überein!\n");
                     state -=2;
                 }
             }
             
             /* 2 stat */
             if (!strcmp(prolRes.dialogrec->command, "stat")) {
-                printf("===STAT===\nvon Mailbox: %s\n", mailbox);
+                printf("===STAT===\nvon Mailbox: %s\n", mailbox);               
+                printf("+OK %d %d\n", file_index->nEntries, file_index->totalSize);
                 
-                /* FILEINDEX */
+            }
+            
+            /* 2 list */
+            if (!strcmp(prolRes.dialogrec->command, "list") && (!strlen(prolRes.dialogrec->param))) {
+                printf("===LIST ALL===\n");
+                
                 if (file_index == NULL) {
                     file_index = fi_new(mailbox, line_separator);
                 } else {
@@ -139,21 +151,10 @@ int process_pop3(int infd, int outfd) {
                     file_index = fi_new(mailbox, line_separator);
                 }
                 
-                printf("Es gibt %d Mails bei %d Bytes\n", file_index->nEntries, file_index->totalSize);
-                
-            }
-            
-            /* 2 list */
-            if (!strcmp(prolRes.dialogrec->command, "list")) {
-                printf("===LIST ALL===\n");
-                
-                if (file_index == NULL) {
-                    file_index = fi_new(mailbox, line_separator);
-                }
-                
                 if (file_index->entries == NULL) {
                     perror("Keine Mails vorhanden!");
                 } else {
+					printf("+OK %d messages:\n", file_index->nEntries);
                     fi_entry = file_index->entries;
                     
                     while(fi_entry) {
@@ -166,8 +167,23 @@ int process_pop3(int infd, int outfd) {
             }
             
             /* 2 list msgno */
-            if (!strcmp(prolRes.dialogrec->command, "list")) {
-                printf("===LIST MSG===\n");
+            if (!strcmp(prolRes.dialogrec->command, "list") && (strlen(prolRes.dialogrec->param))) {
+                msgno = atoi(prolRes.dialogrec->param);
+                printf("===LIST MSG %d===\n", msgno);
+                
+                if (file_index == NULL) {
+                    file_index = fi_new(mailbox, line_separator);
+                }
+                
+                fi_entry = fi_find(file_index, msgno);
+                
+                if (fi_entry != NULL) {
+                    printf("+OK %d %d\n", fi_entry->nr, fi_entry->size);
+                    /* Mit LSEEK oder BUF OFFSET positionieren und dann ausgeben. */
+                    
+                    printf(".\r\n");
+                }
+                
             }
             
             /* 2 retr msgno */

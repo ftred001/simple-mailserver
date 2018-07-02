@@ -109,6 +109,6 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 }
 
 void printRes(ProlResult res) {
-	printf("printRes(ProlResult ):\n%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
-    printf("ProlRes.DialogRec CMD: %s  PARAM: %s\n", res.dialogrec->command, res.dialogrec->param);
+	printf("printRes(ProlResult):\n%d %s | Global-State: %d \n", res.failed, res.info, globalstate);	
+    printf("ProlRes.DialogRec CMD: %s  PARAM: %s\n----\n", res.dialogrec->command, res.dialogrec->param);
 }
