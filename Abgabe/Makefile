@@ -13,6 +13,9 @@ pop3: pop3.c dialog.c linebuffer.c database.c fileindex.c
 testlb: testlb.c linebuffer.c
 	$(CC) $(CFLAGS) -o testlb testlb.c linebuffer.c
 	
+mailserver: mailserver.c pop3.c database.c
+	$(CC) $(CFLAGS) -o mailserver mailserver.c pop3.c database.c
+
 run: pop3
 	./pop3
 
