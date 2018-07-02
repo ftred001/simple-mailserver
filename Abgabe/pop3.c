@@ -68,17 +68,21 @@ int process_pop3(int infd, int outfd) {
     int db_index;
 	DBRecord *dbRec = calloc(1, sizeof(DBRecord));
 	const char *line_separator = "\n";
-	char *line = calloc(1, LINEMAX);
-	LineBuffer *b;
+	const char *msg_separator = "\n";
+	char *line = calloc(LINEMAX, sizeof(char));
+	char *msg_line;
+	LineBuffer *linebuf, *msg_buf;
     FileIndexEntry *fi_entry;
     int msgno;
+    int msg_fd;
+    int msg_i;
 
     
 	
 	if (infd<0) { perror("Bei Oeffnen der Eingabedatei");exit(2);}
 	
-	b = buf_new(infd, line_separator);
-	if(buf_readline(b, line, LINEMAX) !=-1) {
+	linebuf = buf_new(infd, line_separator);
+	if(buf_readline(linebuf, line, LINEMAX) !=-1) {
 		printf("Input: %s\n", line);
 		
 		/* Abbruchbedingung */
@@ -108,6 +112,7 @@ int process_pop3(int infd, int outfd) {
 
                     
                 } else {
+					/* Soll eigentlich nichts machen und erst in pass überprüfen ob alles OK*/
                     printf("User nicht gefunden!\n");
                     state=0;
                 }
@@ -135,7 +140,7 @@ int process_pop3(int infd, int outfd) {
             
             /* 2 stat */
             if (!strcmp(prolRes.dialogrec->command, "stat")) {
-                printf("===STAT===\nvon Mailbox: %s\n", mailbox);               
+                printf("===STAT von Mailbox: %s===\n", mailbox);               
                 printf("+OK %d %d\n", file_index->nEntries, file_index->totalSize);
                 
             }
@@ -178,10 +183,7 @@ int process_pop3(int infd, int outfd) {
                 fi_entry = fi_find(file_index, msgno);
                 
                 if (fi_entry != NULL) {
-                    printf("+OK %d %d\n", fi_entry->nr, fi_entry->size);
-                    /* Mit LSEEK oder BUF OFFSET positionieren und dann ausgeben. */
-                    
-                    printf(".\r\n");
+                    printf("+OK %d %d\n", fi_entry->nr, fi_entry->size);                    
                 }
                 
             }
@@ -199,8 +201,29 @@ int process_pop3(int infd, int outfd) {
                 
                 if (fi_entry != NULL) {
                     printf("+OK %d octets\n", fi_entry->size);
-                    /* Mit LSEEK oder BUF OFFSET positionieren und dann ausgeben. */
+                    printf("Offset bei %d\n", fi_entry->seekpos);
                     
+                    /* neuer Buffer zum Ausgeben der Mail */
+                    if ((msg_fd=open(mailbox, O_RDONLY, 0644))<0) {
+						perror("Beim Öffnen des Filepaths");
+					}
+                    
+                    msg_buf = buf_new(msg_fd,msg_separator);
+                    
+                    /* Buffer offsetten */
+					if (buf_seek(msg_buf, fi_entry->seekpos) <0) {
+						perror("BUF_SEEK <0");
+					}
+					
+					/* Zeilenweise ausgeben */
+					msg_i =0;
+					msg_line = (char*)calloc(LINEMAX, sizeof(char));
+					
+					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i < fi_entry->lines)) {
+						printf("%s\r\n",msg_line);
+						msg_line[0] = '\0';
+						msg_i++;
+					}
                     printf(".\r\n");
                 }
                 
@@ -218,8 +241,8 @@ int process_pop3(int infd, int outfd) {
             printf("ProlRes.dialogrec == NULL!\n");
         }
 	}
-
-	buf_dispose(b);
+	
+	buf_dispose(linebuf);
     free(dbRec);
     
     printf("====\nState: %d\n====\n", state);

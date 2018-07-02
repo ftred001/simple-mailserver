@@ -14,7 +14,7 @@
 LineBuffer *buf_new(int descriptor, const char *linesep) {
 	LineBuffer *lb;
 	
-	printf(">>>buf_new(%d)\n", descriptor);
+	/* printf(">>>buf_new(%d)\n", descriptor); */
 	if ((lb = (LineBuffer*)calloc(1,sizeof(LineBuffer))) == NULL) {
 		perror("Beim Allokieren des LineBuffers");
 		return NULL;
@@ -27,7 +27,7 @@ LineBuffer *buf_new(int descriptor, const char *linesep) {
 }
 
 void buf_dispose(LineBuffer *lb) {
-	printf(">>>buf_dispose(fd: %d)\n", lb->descriptor); 
+	/* printf(">>>buf_dispose(fd: %d)\n", lb->descriptor); */
 	
 	if (lb == NULL) {
 		perror("Nothing to dispose");
@@ -59,7 +59,7 @@ int fill_buffer(LineBuffer *b, int linemax) {
 		b->end = read(b->descriptor, b->buffer, linemax);
 		if (b->end == 0) {
 			/* Dateiende */
-			printf("---END OF FILE---\n\n");
+			/*printf("---END OF FILE---\n\n");*/
 			return -1;
 		} else if (b->end <0) {
 			perror("Lesefehler\n");
@@ -117,7 +117,7 @@ int buf_readline(LineBuffer *b, char *line, int linemax) {
 			fill_buffer(b, linemax);
 		}
 	}
-	printf("END OF FILE\n");
+	/* printf("END OF FILE\n"); */
 	return -1;
 }
 
@@ -129,13 +129,9 @@ int buf_where(LineBuffer *b) {
 
 /* Positioniert auf Offset in Bytes */
 int buf_seek(LineBuffer *b, int seekpos) {
-	printf("BUF_SEEK (%d)\n",seekpos);
+	/* printf("BUF_SEEK (%d)\n",seekpos); */
 	b->bytesread = seekpos;
 	b->here = 0;
 	b->end = 0;
 	return lseek(b->descriptor, seekpos*sizeof(char), SEEK_SET);
-}
-
-void print_pos(LineBuffer *b) {
-	printf("Aktuelle Byteposition: %d\n", buf_where(b));
 }

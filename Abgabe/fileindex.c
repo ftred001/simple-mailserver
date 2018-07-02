@@ -86,10 +86,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	char *line = (char*)calloc(LINEBUFFERSIZE, sizeof(char));
 	LineBuffer *b = NULL;
 	int fd, umbruch=0;
-	int linestart, lineend;
-
-	
-	printf("FI_NEW: %s\n", filepath);
+	int linestart;
+	/* int lineend; */
 	
 	if ((findex = (FileIndex*)calloc(1, sizeof(FileIndex))) == NULL) {
 		perror("Beim allokieren des Speichers für FileIndex");
@@ -103,16 +101,22 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 		perror("Beim Öffnen des Filepaths");
 	}
 	
-	b = buf_new(fd, separator);
+	if ((b = buf_new(fd, separator))== NULL) {
+		perror("buf_new == NULL");
+	}
+	
+	
 	
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
 		findex->totalSize =  buf_where(b); 
-		linestart = buf_where(b) - strlen(line)- b->lineseplen;
-		lineend = buf_where(b);
+		linestart = findex->totalSize - strlen(line)- b->lineseplen;
 		
+		/*
+		lineend = findex->totalSize;
 		printf("buf_where: %d strlen: %ld lineseplen: %d\n", buf_where(b), strlen(line), b->lineseplen);
         printf("Start: %d End:%d line: %s \n", linestart, lineend,line);
+		*/
 		
 		/* Sektionsanfang */
 		if (!strncmp(line, "From ", 5)) {
@@ -185,9 +189,26 @@ void fi_dispose(FileIndex *fi) {
  * return NULL bei Fehler
  * */
 FileIndexEntry *fi_find(FileIndex *fi, int n) {
-	FileIndexEntry *res = fi->entries;
+	FileIndexEntry *res = NULL;
 	
 	printf(">>>Find Entry #%d\n",n);
+	
+	if (fi == NULL) {
+		perror("file_index cannot be NULL!");
+		return NULL;
+	}
+	
+	if (n<1) {
+		perror("Muss mind. 1 sein"); 
+		return NULL;
+	}
+	
+	if (n>fi->nEntries) {
+		perror("Out of range");
+		return NULL;
+	}
+	
+	res = fi->entries;
 	
 	while(res != NULL) {
 		if (res->nr == n) {
@@ -197,7 +218,7 @@ FileIndexEntry *fi_find(FileIndex *fi, int n) {
 		res = res->next;
 	}
 	
-	printf("---Entry NOT found\n");
+	perror("Entry NOT found\n");
 	return NULL;
 }
 
@@ -209,41 +230,7 @@ FileIndexEntry *fi_find(FileIndex *fi, int n) {
 int fi_compactify(FileIndex *fi) {
 	/* TODO Richtig implementieren!!! */ 
 	printf(">>>fi_compactify(FileIndex *fi)\n");
-		
+	perror("fi_compactify NICHT implementiert!");
 	
 	return 0;
 }
-
-
-/*
-int main(int argc, char *argv[]) {
-	FileIndex *findex;
-	FileIndexEntry *res;
-	const char *line_separator = "\n";
-
-	
-	printf("Lese folgende Datei ein: %s\n\n", argv[1]);
-	
-	findex = fi_new(argv[1], line_separator);
-
-	print_entries(findex);
-	
-	print_fi(findex);
-	
-	res = fi_find(findex, 1);
-	print_entry(res);
-	
-	res->del_flag = 1;
-	printf(">>>Lösche EINTRAG 3\n");
-	
-	
-	print_entries(findex);
-	print_fi(findex);
-	
-
-	
-	fi_dispose(findex);
-	
-	return 0;
-}
-*/
