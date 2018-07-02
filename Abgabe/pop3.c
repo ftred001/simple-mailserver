@@ -5,11 +5,13 @@
 #include <stdio.h>
 #include <unistd.h> /* STDIN_FILENO, STDOUT_FILENO, write, read */
 #include <string.h>
+#include <strings.h> /* strcasecmp() */
 
 #include "linebuffer.h"
 #include "dialog.h"
 #include "database.h"
 #include "fileindex.h"
+#include "pop3.h"
 
 int state = 0;
 const char *STD_FILEPATH = "mailserver.db";
@@ -18,6 +20,7 @@ char *mailbox;
 int mailcount = 0;
 FileIndex *file_index;
 const char *msg_separator = "\r\n";
+int running = 0;
 
 DialogRec dialogspec[] = {
 	/* Command,		Param, 	State,	Next-State,	Validator */
@@ -29,23 +32,9 @@ DialogRec dialogspec[] = {
 	{ "noop",		"",		2,		2,			validate_noparam },
 	{ "rset",		"",		2,		2,			validate_noparam  },
 	{ "dele",		"",		2,		2,			validate_hasparam },
-	{ "QUIT",		"",		2,		0,			validate_noparam },
+	{ "quit",		"",		2,		0,			validate_noparam },
 	{ "" }
 };
-
-int match_filter(DBRecord *rec, const void *data) {
-	if (strlen(data) == 0) {
-		return 2;
-	}
-	
-	if (strstr(rec->key, data)) {
-		return 1;
-	}
-	if (strstr(rec->cat, data)) {
-		return 1;
-	}
-	return 0;
-}
 
 
 /* Liest POP3 Kommands über infd */
@@ -70,6 +59,11 @@ int process_pop3(int infd, int outfd) {
 	if (infd<0) { perror("Bei Oeffnen der Eingabedatei");exit(2);}
 	if (outfd<0) { perror("Bei Oeffnen der Ausgabedatei");exit(4);}
 	
+	if (running == 0) {
+		sprintf(response,"+OK Halli Hallo auf dem fast guten Mailserver!\r\n");
+		write(outfd,response,strlen(response)+1);
+		running = 1;
+	}
 
 	
 	linebuf = buf_new(infd, line_separator);
@@ -90,7 +84,7 @@ int process_pop3(int infd, int outfd) {
             /* printRes(prolRes); */
             
             /* 0 User Login */
-            if (!strcmp(prolRes.dialogrec->command, "user")) {
+            if (!strcasecmp(prolRes.dialogrec->command, "user")) {
                 strcpy(dbRec->key, prolRes.dialogrec->param);
                 strcpy(dbRec->cat, "mailbox");
                 strcpy(response, "+OK\r\n");
@@ -110,7 +104,7 @@ int process_pop3(int infd, int outfd) {
             }
             
             /* 1 Passwort */
-            if (!strcmp(prolRes.dialogrec->command, "pass")) {
+            if (!strcasecmp(prolRes.dialogrec->command, "pass")) {
 				/*printf("Username: %s Password:%s\n", username, prolRes.dialogrec->param);*/
 				
 				if (strlen(username)) {
@@ -146,12 +140,12 @@ int process_pop3(int infd, int outfd) {
 
             
             /* 2 stat */
-            if (!strcmp(prolRes.dialogrec->command, "stat")) {    
+            if (!strcasecmp(prolRes.dialogrec->command, "stat")) {    
                 sprintf(response, "+OK %d %d\r\n", file_index->nEntries, file_index->totalSize);
             }
             
             /* 2 list */
-            if (!strcmp(prolRes.dialogrec->command, "list") && (!strlen(prolRes.dialogrec->param))) {
+            if (!strcasecmp(prolRes.dialogrec->command, "list") && (!strlen(prolRes.dialogrec->param))) {
                                 
                 if (file_index->entries == NULL) {
                     perror("Keine Mails vorhanden!");
@@ -175,7 +169,7 @@ int process_pop3(int infd, int outfd) {
             }
             
             /* 2 list msgno */
-            if (!strcmp(prolRes.dialogrec->command, "list") && (strlen(prolRes.dialogrec->param))) {
+            if (!strcasecmp(prolRes.dialogrec->command, "list") && (strlen(prolRes.dialogrec->param))) {
                 msgno = atoi(prolRes.dialogrec->param);
                                 
                 fi_entry = fi_find(file_index, msgno);
@@ -192,14 +186,16 @@ int process_pop3(int infd, int outfd) {
             }
             
             /* 2 retr msgno */
-            if (!strcmp(prolRes.dialogrec->command, "retr")) {
+            if (!strcasecmp(prolRes.dialogrec->command, "retr")) {
                 msgno = atoi(prolRes.dialogrec->param);
                 
                 
                 fi_entry = fi_find(file_index, msgno);
                 
-                if (fi_entry != NULL) {
-                    sprintf(response, "+OK %d octets\n", fi_entry->size);
+                if (fi_entry == NULL || fi_entry->del_flag == 1) {
+					sprintf(response, "-ERR\r\n");
+				} else {
+                    sprintf(response, "+OK %d octets\r\n", fi_entry->size);
                     if (write(outfd, response, strlen(response)+1) <0) {
 						perror("responding (write)");
 					}
@@ -245,24 +241,25 @@ int process_pop3(int infd, int outfd) {
             }
             
             /* 2 quit */
-            if (!strcmp(prolRes.dialogrec->command, "quit")) {
-                sprintf(response, "+OK Logging out.\r\n");
+            if (!strcasecmp(prolRes.dialogrec->command, "quit")) {
                 memset(username, 0, DB_KEYLEN);
                 free(username);
                 memset(mailbox, 0, DB_VALLEN);
                 free(mailbox);
                 fi_compactify(file_index);           
                 fi_dispose(file_index);
+                state = 0;
+                sprintf(response, "+OK Logging out.\r\n");
             }
             
             
             /* 2 noop */
-            if (!strcmp(prolRes.dialogrec->command, "noop")) {    
+            if (!strcasecmp(prolRes.dialogrec->command, "noop")) {    
                 sprintf(response, "+OK\r\n");
             }
             
             /* 2 dele msgno */
-            if (!strcmp(prolRes.dialogrec->command, "dele") && (strlen(prolRes.dialogrec->param))) {
+            if (!strcasecmp(prolRes.dialogrec->command, "dele") && (strlen(prolRes.dialogrec->param))) {
                 msgno = atoi(prolRes.dialogrec->param);
                 
                 fi_entry = fi_find(file_index, msgno);
