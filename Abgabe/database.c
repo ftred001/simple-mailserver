@@ -25,7 +25,7 @@ int db_list(const char *path, int outfd,
 	int key_rest, cat_rest, value_rest;
 	unsigned long data_count;
 	DBRecord *record_map;
-	char *zeile = (char*)calloc(1, sizeof(DBRecord)+ 8);
+	char *zeile = (char*)calloc(1024, sizeof(char));
 	char *separator = "|";
 	int filter_res = 2;
 	
@@ -63,12 +63,18 @@ int db_list(const char *path, int outfd,
 	record_map = mmap(0, file_length, PROT_READ, MAP_SHARED, infd, 0);
 		
 	
+	
+	
 	/* Format String List */
 	for (i=0; i<data_count; i++) {
 		/* Wenn Filter-Regeln stimmen, dann mache folgendes: */
 		if ((filter_res = filter(&record_map[i],data))) {
+			
+			sprintf(zeile, "%d: %s | %s | %s\n", i, record_map[i].key, record_map[i].cat, record_map[i].value);
+			
+			/*
 			zeile = strcat(zeile, separator);
-			/* Key */
+
 			zeile = strcat(zeile, record_map[i].key);
 			key_rest = DB_KEYLEN - strlen(record_map[i].key);
 			for (s=0; s<key_rest; s++) {
@@ -76,7 +82,7 @@ int db_list(const char *path, int outfd,
 			}
 			zeile = strcat(zeile, separator);
 			
-			/* Cat */
+
 			zeile = strcat(zeile, record_map[i].cat);
 			cat_rest = DB_CATLEN - strlen(record_map[i].cat);
 			for (s=0; s<cat_rest; s++) {
@@ -84,17 +90,17 @@ int db_list(const char *path, int outfd,
 			}
 			zeile = strcat(zeile, separator);
 			
-			/* Value */
+
 			zeile = strcat(zeile, record_map[i].value);
 			value_rest = DB_VALLEN - strlen(record_map[i].value);
 			for (s=0; s<value_rest; s++) {
 				zeile = strcat(zeile, "");
 			}
 			zeile = strcat(zeile, separator);
-			zeile = strcat(zeile, "\n");
+			zeile = strcat(zeile, "\n"); */
             
-            /* Schreibe Ergebnis in outfd */
-            if (write(outfd, zeile, sizeof(zeile)) <0) {
+
+            if (write(outfd, zeile, strlen(zeile)) <0) {
                 perror("speichern (write)");
             }
 		}

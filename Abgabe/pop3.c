@@ -300,7 +300,7 @@ int process_pop3(int infd, int outfd) {
 }
 
 
-/* Test-Main für POP3-Protokoll.
+/* Test-Main für POP3-Protokoll. */
 int main(void) {
     printf("POP3 Server started.\nAvailable Commands: list | user | pass | stat | list (#)| retr #\n");
 	while(process_pop3(STDIN_FILENO, STDOUT_FILENO)) {
@@ -309,4 +309,3 @@ int main(void) {
 	
 	return 0;
 }
-*/

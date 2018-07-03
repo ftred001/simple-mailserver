@@ -10,7 +10,7 @@
 #include "database.h"
 #include "pop3.h"
 
-#define PORTNUMMER 1234
+#define PORTNUMMER 8110
 
 /* Sockets: Immer bidirektional!
  * 1) Socket erstollen mit socket(int domain, int type, int protocol)
@@ -50,19 +50,22 @@ int conn_made(int clientsockfd) {
 	ssize_t size;
 	char *nachricht = (char*)calloc(1024, sizeof(char));
 	
-	size = recv(clientsockfd, nachricht, 1024, 0);
-	if (size <0) {
-		perror("recv");
-		return -1;
-	}
+	while(process_pop3(clientsockfd, clientsockfd)) {
+		size = recv(clientsockfd, nachricht, 1024, 0);
+		if (size <0) {
+			perror("recv");
+			return -1;
+		}
 	
-	printf("Received %ld bytes...\n", size);
-	
-	printf("%s\n", nachricht);
+		printf("Received %ld bytes...\n", size);
+		
+		printf("%s\n", nachricht);
 
-	
-	sprintf(nachricht, "%ld\r\n", size+2);
-	write(clientsockfd, nachricht, size+2);
+		
+		sprintf(nachricht, "%ld\r\n", size+2);
+		write(clientsockfd, nachricht, size+2);
+	}
+
 	return 0;
 }
 
