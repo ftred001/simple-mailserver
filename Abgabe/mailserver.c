@@ -1,3 +1,7 @@
+#include "pop3.h"
+#include "smtp.h"
+#include "database.h"
+
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -12,12 +16,13 @@
 #include <ifaddrs.h>
 #include <pthread.h>
 
-#include "database.h"
-#include "pop3.h"
-#include "smtp.h"
 
-char[] STD_PORT = "8110";
-char[] LOCALHOST = "127.0.0.1";
+
+
+const char *LOCALHOST = "127.0.0.1";
+const char *STD_POP3_PORT = "8110";
+const char *STD_SMTP_PORT = "8025";
+const char *mail_server_filepath = "mailserver.db";
 
 int clientsock, popsock, smtpsock;
 
@@ -26,7 +31,8 @@ void mail_sighandler_father(int sig) {
 	signal(SIGINT, SIG_DFL);
 }
 
-void stmp_sighandler_father(int sig) {
+
+void smtp_sighandler_father(int sig) {
 	close(smtpsock);
 	signal(SIGINT, SIG_DFL);
 }
@@ -38,32 +44,33 @@ void *smtp_request(void *func) {
 }
 
 int main(void) {
-	int clientlen, running=1, pid, port, host;
+	int running=1, pid, port, host;
 	struct sockaddr_in servaddr, clientaddr;
 	fd_set readfds, writefds;
 	int maxfd;
 	pthread_t thread_id;
+	socklen_t clientlen;
 	
 	DBRecord pop3_portrec = {"port", "pop3", ""};
 	DBRecord pop3_hostrec = {"host", "pop3", ""};
 	DBRecord smtp_portrec = {"port", "smtp", ""};
 	DBRecord smtp_hostrec = {"host", "smtp", ""};
 	
-	/* POP 3 */
+	/* POP 3 Setup */
 	/* Get Port */
-	port = db_search("mailserver.db", 0, &pop3_portrec);
+	port = db_search(mail_server_filepath, 0, &pop3_portrec);
 	if (port > 0) {
-		db_get("mailserver.db", port, &smtp_portrec);
+		db_get(mail_server_filepath, port, &pop3_portrec);
 	} else {
-		strcpy(pop3_portrec.value, STD_PORT);
+		strcpy(pop3_portrec.value, STD_POP3_PORT);
 	}
 	port = atoi(pop3_portrec.value);
 	
 	/* Get Host */
-	host = db_search("mailserver.db", 0, &pop3_hostrec);
+	host = db_search(mail_server_filepath, 0, &pop3_hostrec);
 	
 	if (port > 0) {
-		db_get("mailserver.db", port, &host_portrec);
+		db_get(mail_server_filepath, port, &pop3_portrec);
 	} else {
 		strcpy(pop3_hostrec.value, LOCALHOST);
 	}
@@ -77,7 +84,7 @@ int main(void) {
 		perror("socket"); exit(-1);
 	}
 	
-	if (setsockopt(popsock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+	if (setsockopt(popsock, SOL_SOCKET, SO_REUSEADDR, &running, sizeof(int)) < 0) {
 		perror("setsockopt(SO_REUSEADDR) failed");
 	}
 	
@@ -92,10 +99,111 @@ int main(void) {
 	
 	
 	
-	/* SMTP */
+	/* SMTP Setup */
+	port = db_search(mail_server_filepath, 0, &smtp_portrec);
+	if(port >= 0){
+		db_get(mail_server_filepath, port, &smtp_portrec);
+	} else {
+		strcpy(smtp_portrec.value, STD_SMTP_PORT);
+	}
+	
+	port = atoi(smtp_portrec.value);
+	
+	host = db_search(mail_server_filepath, 0, &smtp_hostrec);
+	if(host >= 0){
+		db_get(mail_server_filepath, host, &smtp_hostrec);
+	} else {
+		strcpy(smtp_hostrec.value, LOCALHOST);
+	}
+	
+	servaddr.sin_family = AF_INET;
+	/*servaddr.sin_addr.s_addr = htonl(INADDR_ANY);*/
+	servaddr.sin_addr.s_addr = inet_addr(smtp_hostrec.value);
+	servaddr.sin_port = htons(port);
+	
+	if ((smtpsock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("socket");
+		exit(-1);
+	}
+	
+	if (setsockopt(smtpsock, SOL_SOCKET, SO_REUSEADDR, &running, sizeof(int)) < 0) {
+		perror("setsockopt(SO_REUSEADDR) failed");
+	}
+	
+	if (bind(smtpsock, (struct sockaddr*) &servaddr, sizeof(struct sockaddr_in)) < 0) {
+		perror("bind");
+		exit(-1);
+	}
+	
+	if (listen(smtpsock, 5) < 0) {
+		perror("listen");
+		exit(-1);
+	}
 	
 	
 	/* */
+	for(;;) {
+		
+		/* RESET FD SETS */
+		FD_ZERO(&readfds);
+		FD_ZERO(&writefds);
+		FD_SET(0, &readfds);
+		FD_SET(popsock, &readfds);
+		FD_SET(smtpsock, &readfds);
+		
+		if(popsock < smtpsock) {
+			maxfd = smtpsock;
+		} else {
+			maxfd = popsock;
+		}
+		
+		/* Comment */
+		if (select(maxfd+1, &readfds, &writefds, NULL, NULL) <0) {
+			perror("select()"); exit(1);
+		}
+		
+		/* POP3 Handling */
+		if (FD_ISSET(popsock, &readfds)) {
+			clientlen = (socklen_t)sizeof(struct sockaddr);
+			clientsock = accept(popsock, (struct sockaddr *)&clientaddr, &clientlen);
+			
+			if (clientsock < 0){
+				perror("accept");exit(-1);
+			}
+			
+			if((pid = fork()) == -1) {
+				perror("Fehler bei fork()");
+			} else if (pid == 0){
+				/* Comment */
+				close(popsock);
+				process_pop3(clientsock, clientsock);
+				close(clientsock);
+			} else {
+				/* Comment */
+				signal(SIGINT, mail_sighandler_father);
+				close(clientsock);
+				continue;
+			}
+		}
+		
+
+		if(FD_ISSET(smtpsock, &readfds)){
+			
+			clientlen = (socklen_t) sizeof(struct sockaddr);
+			clientsock = accept(smtpsock, (struct sockaddr *) &clientaddr, &clientlen);
+			
+			if (clientsock < 0){
+				perror("accept");
+				exit(-1);
+			}
+			
+			pthread_create(&thread_id, NULL, smtp_request, NULL);
+			pthread_detach(thread_id);
+			
+		}
+		
+	
+	}
 	
 	
 	return 0;

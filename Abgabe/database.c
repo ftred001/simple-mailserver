@@ -168,31 +168,27 @@ int db_search(const char *filepath, int start, DBRecord *record) {
 
 /* Schreibt Inhalte in result-Pointer */
 int db_get(const char *filepath, int index, DBRecord *result) {
-	int fd, file_length;
-	unsigned long data_count;
-	DBRecord *record_map;
+DBRecord buffer;
+	int fd, gelesen;
+	fd = open(filepath, O_RDONLY);
 	
-	fd = open(filepath, O_RDONLY, 0644);
-	file_length = lseek(fd, 0, SEEK_END);
-	data_count = file_length / sizeof(DBRecord);
-	
-	/* Index > als Anzahl Datensätze */
-	if (index>=data_count) {
+	if(lseek(fd,sizeof(DBRecord)*index,SEEK_SET) < 0) {
+		perror("Error");
 		close(fd);
-		printf("=====GET Result Index: %d=====\nERROR: Index out of Bounds\n\n", index);
 		return -1;
 	}
 	
-	/* Kopiere Werte in den Result-Pointer */
-	record_map = mmap(0,file_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	strcpy(result->key, record_map[index].key);
-	strcpy(result->cat, record_map[index].cat);
-	strcpy(result->value, record_map[index].value);
+	gelesen = read(fd, &(buffer), sizeof(DBRecord));
+		
+	if(gelesen < 0){
+		perror("Lesefehler");
+		close(fd);
+		return -1;
+	}
 	
-	munmap(record_map, file_length);
-    close(fd);
+	*result = buffer;
 	
-	printf("=====GET Result Index: %d=====\n%s %s %s\n\n", index, result->key, result->cat, result->value);
+	close(fd);
 	return 0;
 }
 
