@@ -1,116 +1,102 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <signal.h>
+#include <ifaddrs.h>
+#include <pthread.h>
 
 #include "database.h"
 #include "pop3.h"
+#include "smtp.h"
 
-#define PORTNUMMER 8110
+char[] STD_PORT = "8110";
+char[] LOCALHOST = "127.0.0.1";
 
-/* Sockets: Immer bidirektional!
- * 1) Socket erstollen mit socket(int domain, int type, int protocol)
- * 2) Zu einer IP und Port connecten: connect()
- * 
- * */
+int clientsock, popsock, smtpsock;
 
-
-DBRecord *get_portDBR(int port) {
-	DBRecord *dbrec = (DBRecord*)calloc(1, sizeof(DBRecord));
-	char *port_string = "1234"; 
-	
-	
-	strcpy(dbrec->key,"port");
-	strcpy(dbrec->cat,"pop3"); 
-
-	
-	if (port>1024 && port < 65535) {
-		sprintf(port_string, "%d", port);
-	}
-	
-	strcpy(dbrec->value, port_string);
-	
-	return dbrec;
+void mail_sighandler_father(int sig) {
+	close(popsock);
+	signal(SIGINT, SIG_DFL);
 }
 
-DBRecord *get_ipDBR(char *ip_adress) {
-	DBRecord *dbrec = (DBRecord*)calloc(1, sizeof(DBRecord));
-	strcpy(dbrec->key,"host");
-	strcpy(dbrec->cat,"pop3");
-	strcpy(dbrec->value, ip_adress);
-	
-	return dbrec;
+void stmp_sighandler_father(int sig) {
+	close(smtpsock);
+	signal(SIGINT, SIG_DFL);
 }
 
-int conn_made(int clientsockfd) {
-	ssize_t size;
-	char *nachricht = (char*)calloc(1024, sizeof(char));
-	
-	
-	while(1) {
-		size = recv(clientsockfd, nachricht, 1024, 0);
-		if (size <0) {
-			perror("recv");
-			return -1;
-		}
-		
-		printf("Received %ld bytes message: %s\n", size, nachricht);
-		
-		process_pop3(clientsockfd, clientsockfd);
-		
-		
-
-		sprintf(nachricht, "%ld\r\n", size+2);
-		write(clientsockfd, nachricht, size+2);
-	}
-
-	close(clientsockfd);
-	printf("Closed Clientsock!\n");
-
-	return 0;
+void *smtp_request(void *func) {
+	process_smtp(clientsock, clientsock);
+	close(clientsock);
+	pthread_exit(NULL);
 }
 
 int main(void) {
-	int sockfd, newsockfd, clientlen, running=1;
+	int clientlen, running=1, pid, port, host;
 	struct sockaddr_in servaddr, clientaddr;
+	fd_set readfds, writefds;
+	int maxfd;
+	pthread_t thread_id;
 	
+	DBRecord pop3_portrec = {"port", "pop3", ""};
+	DBRecord pop3_hostrec = {"host", "pop3", ""};
+	DBRecord smtp_portrec = {"port", "smtp", ""};
+	DBRecord smtp_hostrec = {"host", "smtp", ""};
 	
-	printf("Starting Mailserver...\n");
+	/* POP 3 */
+	/* Get Port */
+	port = db_search("mailserver.db", 0, &pop3_portrec);
+	if (port > 0) {
+		db_get("mailserver.db", port, &smtp_portrec);
+	} else {
+		strcpy(pop3_portrec.value, STD_PORT);
+	}
+	port = atoi(pop3_portrec.value);
 	
+	/* Get Host */
+	host = db_search("mailserver.db", 0, &pop3_hostrec);
+	
+	if (port > 0) {
+		db_get("mailserver.db", port, &host_portrec);
+	} else {
+		strcpy(pop3_hostrec.value, LOCALHOST);
+	}
+	
+	/* create Socket */
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(PORTNUMMER);
+	servaddr.sin_port = htons(port);
 	
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((popsock = socket(AF_INET, SOCK_STREAM, 0)) <0 ) {
 		perror("socket"); exit(-1);
 	}
 	
-	if (bind(sockfd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) <0) {
+	if (setsockopt(popsock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+		perror("setsockopt(SO_REUSEADDR) failed");
+	}
+	
+	if (bind(popsock, (struct sockaddr*) &servaddr, sizeof(struct sockaddr_in)) < 0) {
 		perror("bind"); exit(-1);
 	}
 	
-	if (listen(sockfd,5)<0) { perror("listen"); exit(-1);}
-	
-	printf("Waiting for connections!\n");
-	
-	for (;;) {
-		clientlen = sizeof(struct sockaddr);
-		newsockfd = accept(sockfd, (struct sockaddr*)&clientaddr, &clientlen);
-		
-		if (newsockfd <0) { perror("accept"); exit(-1);}
-		
-		while(running) {
-			if((process_pop3(newsockfd, newsockfd))<0) {
-					running = 0;
-					break;
-			}
-		}
-		
+	if (listen(popsock, 5) < 0) {
+		perror("listen");
+		exit(-1);
 	}
+	
+	
+	
+	/* SMTP */
+	
+	
+	/* */
+	
 	
 	return 0;
 }

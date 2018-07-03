@@ -34,16 +34,47 @@ int main(int argc, char *argv[]) {
 		perror("connect"); exit(-1);
 	}
 	
-	strcpy(nachricht, "user joendhard\r\n");
+	memset(&buffer, 0, 1024);
+	
+	strcpy(nachricht, "USER joendhard\r\n");
 	write(sockfd, nachricht, strlen(nachricht));
 	n = read(sockfd, buffer, 1024);
-	printf("Empfangene MSG: %s\n", buffer);
+	printf("Buffer: %s", buffer);
 	
+	memset(&buffer, 0, 1024);
 	
-	strcpy(nachricht, "pass biffel\r\n");
+	strcpy(nachricht, "PASS biffel\r\n");
 	write(sockfd, nachricht, strlen(nachricht));
 	n = read(sockfd, buffer, 1024);
-	printf("Empfangene MSG: %s\n", buffer);
+	printf("Buffer: %s", buffer);
+	
+	memset(&buffer, 0, 1024);
+	
+	strcpy(nachricht, "STAT\r\n");
+	write(sockfd, nachricht, strlen(nachricht));
+	n = read(sockfd, buffer, 1024);
+	printf("Buffer: %s", buffer);
+	
+	strcpy(nachricht, "LIST\r\n");
+	write(sockfd, nachricht, strlen(nachricht));
+	n = read(sockfd, buffer, 1024);
+	printf("Buffer: %s", buffer);
+	
+	memset(&buffer, 0, 1024);
+	
+	strcpy(nachricht, "LIST 2\r\n");
+	write(sockfd, nachricht, strlen(nachricht));
+	n = read(sockfd, buffer, 1024);
+	printf("Buffer %s", buffer);
+	
+	memset(&buffer, 0, 1024);
+	
+	strcpy(nachricht, "RETR 8\r\n");
+	write(sockfd, nachricht, strlen(nachricht));
+	read(sockfd, buffer, 1024);
+	printf("Buffer: %s", buffer);
+	memset(&buffer, 0, 1024);
+	
 	
 	close(sockfd);
 	

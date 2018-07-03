@@ -69,12 +69,13 @@ int process_pop3(int infd, int outfd) {
 	
 	linebuf = buf_new(infd, MSG_SEPARATOR);
 	if(buf_readline(linebuf, line, LINEMAX) !=-1) {
-		printf("pop3 input: %s\n", line);
+		/* printf("pop3 input: %s\n", line); */
 		
 		/* Abbruchbedingung */
 		if (line[0] == EOF) {
 			perror("EOF!?\n");
-			return 0;
+			printf("END OF FILE!");
+			return -1;
 		}
 
 		line[strlen(line)] = '\0';
@@ -98,11 +99,11 @@ int process_pop3(int infd, int outfd) {
 
                     strcpy(username, prolRes.dialogrec->param);
                     strcpy(mailbox, dbRec->value);
-                    printf("User %s found\n", prolRes.dialogrec->param);
+                    /* printf("User %s found\n", prolRes.dialogrec->param); */
                 } else {
 					memset(username, 0, DB_KEYLEN);
 					memset(mailbox, 0, DB_VALLEN);
-					printf("User %s not found\n", prolRes.dialogrec->param);
+					/* printf("User %s not found\n", prolRes.dialogrec->param); */
 				}
             }
             
@@ -300,7 +301,7 @@ int process_pop3(int infd, int outfd) {
 	}
 	
 	if (strlen(response)) {
-		printf("pop3 response: _%s_ length: %ld\n", response, strlen(response));
+		printf("%s", response);
 	}
 	
 	
