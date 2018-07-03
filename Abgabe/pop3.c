@@ -42,8 +42,9 @@ DialogRec dialogspec[] = {
 int process_pop3(int infd, int outfd) {
 	ProlResult prolRes;
     int db_index;
-	DBRecord *dbRec = calloc(1, sizeof(DBRecord));
+	DBRecord *dbRec = (DBRecord*)calloc(1, sizeof(DBRecord));
 	const char *line_separator = "\n";
+	const char *MSG_SEPARATOR = "\r\n";
 	char *line = (char*)calloc(LINEMAX, sizeof(char));
 	char *msg_line;
 	char *response = (char*)calloc(LINEMAX, sizeof(char));
@@ -53,7 +54,7 @@ int process_pop3(int infd, int outfd) {
     int msgno;
     int msg_fd;
     int msg_i;
-
+	
     
 	
 	if (infd<0) { perror("Bei Oeffnen der Eingabedatei");exit(2);}
@@ -66,12 +67,13 @@ int process_pop3(int infd, int outfd) {
 	}
 
 	
-	linebuf = buf_new(infd, line_separator);
+	linebuf = buf_new(infd, MSG_SEPARATOR);
 	if(buf_readline(linebuf, line, LINEMAX) !=-1) {
-		/* printf("Input: %s\n", line); */
+		printf("pop3 input: %s\n", line);
 		
 		/* Abbruchbedingung */
 		if (line[0] == EOF) {
+			perror("EOF!?\n");
 			return 0;
 		}
 
@@ -95,11 +97,12 @@ int process_pop3(int infd, int outfd) {
                 if ((db_index = db_search(STD_FILEPATH, 0, dbRec)>=0)) {
 
                     strcpy(username, prolRes.dialogrec->param);
-
                     strcpy(mailbox, dbRec->value);
+                    printf("User %s found\n", prolRes.dialogrec->param);
                 } else {
 					memset(username, 0, DB_KEYLEN);
 					memset(mailbox, 0, DB_VALLEN);
+					printf("User %s not found\n", prolRes.dialogrec->param);
 				}
             }
             
@@ -113,25 +116,25 @@ int process_pop3(int infd, int outfd) {
 					
 					if ((db_search(STD_FILEPATH, 0, dbRec) < 0)) {
 						perror("Kein Ergebnis");
-						sprintf(response, "-ERR\r\n");
+						sprintf(response, "-ERR no entry found on db\r\n");
 					}
 					
 					
 					if (!strcmp(prolRes.dialogrec->param, dbRec->value)) {
 						if ((file_index = fi_new(mailbox, line_separator)) == NULL) {
 							perror("Init FileIndex");
-							sprintf(response, "-ERR\r\n");
+							sprintf(response, "-ERR coudlnt init fileindex\r\n");
 						} else {
 							sprintf(response, "+OK Logged in\r\n");
 						}
                     
 					} else  {
 						/*printf("-ERR Passwörter stimmen nicht überein!\n");*/
-						sprintf(response, "-ERR\r\n");
+						sprintf(response, "-ERR passwords not matching\r\n");
 						state = 0;
 					}
 				} else  {
-					sprintf(response, "-ERR\r\n");
+					sprintf(response, "-ERR user doesnt exist\r\n");
 					/*printf("-ERR User existiert nicht!\n");*/
 					state = 0;
 				}
@@ -149,7 +152,7 @@ int process_pop3(int infd, int outfd) {
                                 
                 if (file_index->entries == NULL) {
                     perror("Keine Mails vorhanden!");
-                    sprintf(response, "ERR\r\n");
+                    sprintf(response, "-ERR no mails on server\r\n");
                 } else {
 					sprintf(response, "+OK %d messages:\r\n", file_index->nEntries);
                     fi_entry = file_index->entries;
@@ -178,7 +181,7 @@ int process_pop3(int infd, int outfd) {
 					if (fi_entry->del_flag == 0) {
 						sprintf(response,"+OK %d %d\r\n", fi_entry->nr, fi_entry->size);  
 					} else {
-						sprintf(response,"-ERR\r\n");
+						sprintf(response,"-ERR couldnt find that msgno \r\n");
 					}
                                       
                 }
@@ -193,7 +196,7 @@ int process_pop3(int infd, int outfd) {
                 fi_entry = fi_find(file_index, msgno);
                 
                 if (fi_entry == NULL || fi_entry->del_flag == 1) {
-					sprintf(response, "-ERR\r\n");
+					sprintf(response, "-ERR no entries\r\n");
 				} else {
                     sprintf(response, "+OK %d octets\r\n", fi_entry->size);
                     if (write(outfd, response, strlen(response)+1) <0) {
@@ -221,7 +224,9 @@ int process_pop3(int infd, int outfd) {
 					msg_i =1;
 					msg_line = (char*)calloc(LINEMAX, sizeof(char));
 					
+					/*
 					printf("PRINT RETR\n");
+					*/
 					
 					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i <= fi_entry->lines)) {
 						sprintf(response, "%s\r\n",msg_line);
@@ -239,19 +244,7 @@ int process_pop3(int infd, int outfd) {
                 }
                 
             }
-            
-            /* 2 quit */
-            if (!strcasecmp(prolRes.dialogrec->command, "quit")) {
-                memset(username, 0, DB_KEYLEN);
-                free(username);
-                memset(mailbox, 0, DB_VALLEN);
-                free(mailbox);
-                fi_compactify(file_index);           
-                fi_dispose(file_index);
-                state = 0;
-                sprintf(response, "+OK Logging out.\r\n");
-            }
-            
+                       
             
             /* 2 noop */
             if (!strcasecmp(prolRes.dialogrec->command, "noop")) {    
@@ -270,21 +263,49 @@ int process_pop3(int infd, int outfd) {
 					file_index->nEntries--;
                     sprintf(response,"+OK\r\n");                    
                 } else {
-					sprintf(response, "-ERR\r\n");
+					sprintf(response, "-ERR entry to delete not found\r\n");
 				}
                 
+            }
+            
+			/* 2 quit */
+            if (!strcasecmp(prolRes.dialogrec->command, "quit")) {
+                memset(username, 0, DB_KEYLEN);
+                free(username);
+                memset(mailbox, 0, DB_VALLEN);
+                free(mailbox);
+                fi_compactify(file_index);           
+                fi_dispose(file_index);
+                state = 0;
+                sprintf(response, "+OK Logging out.\r\n");
+                
+                /* Schicke Antwort an OUT_FD */
+				if (write(outfd, response, strlen(response)+1) <0) {
+					perror("CRITICAL! Couldnt write to OUTFD");
+				}
+				
+				buf_dispose(linebuf);
+				free(dbRec);
+				memset(response, 0, LINEMAX);
+				free(response);
+                return -1;
             }
             
             
             
             
         } else {
-            sprintf(response, "-ERR\r\n");
+            sprintf(response, "-ERR ProlResult IS NULL\r\n");
         }
 	}
 	
+	if (strlen(response)) {
+		printf("pop3 response: _%s_ length: %ld\n", response, strlen(response));
+	}
+	
+	
 	/* Schicke Antwort an OUT_FD */
-	if (write(outfd, response, strlen(response)+1) <0) {
+	if (write(outfd, response, strlen(response)) <0) {
 		perror("CRITICAL! Couldnt write to OUTFD");
 	}
 	
@@ -300,7 +321,7 @@ int process_pop3(int infd, int outfd) {
 }
 
 
-/* Test-Main für POP3-Protokoll. */
+/* Test-Main für POP3-Protokoll. 
 int main(void) {
     printf("POP3 Server started.\nAvailable Commands: list | user | pass | stat | list (#)| retr #\n");
 	while(process_pop3(STDIN_FILENO, STDOUT_FILENO)) {
@@ -308,4 +329,4 @@ int main(void) {
 	}
 	
 	return 0;
-}
+}*/

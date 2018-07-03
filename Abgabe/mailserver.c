@@ -50,27 +50,32 @@ int conn_made(int clientsockfd) {
 	ssize_t size;
 	char *nachricht = (char*)calloc(1024, sizeof(char));
 	
-	while(process_pop3(clientsockfd, clientsockfd)) {
+	
+	while(1) {
 		size = recv(clientsockfd, nachricht, 1024, 0);
 		if (size <0) {
 			perror("recv");
 			return -1;
 		}
-	
-		printf("Received %ld bytes...\n", size);
 		
-		printf("%s\n", nachricht);
+		printf("Received %ld bytes message: %s\n", size, nachricht);
+		
+		process_pop3(clientsockfd, clientsockfd);
+		
+		
 
-		
 		sprintf(nachricht, "%ld\r\n", size+2);
 		write(clientsockfd, nachricht, size+2);
 	}
+
+	close(clientsockfd);
+	printf("Closed Clientsock!\n");
 
 	return 0;
 }
 
 int main(void) {
-	int sockfd, newsockfd, clientlen;
+	int sockfd, newsockfd, clientlen, running=1;
 	struct sockaddr_in servaddr, clientaddr;
 	
 	
@@ -98,9 +103,13 @@ int main(void) {
 		
 		if (newsockfd <0) { perror("accept"); exit(-1);}
 		
-		conn_made(newsockfd);
+		while(running) {
+			if((process_pop3(newsockfd, newsockfd))<0) {
+					running = 0;
+					break;
+			}
+		}
 		
-		close(newsockfd);
 	}
 	
 	return 0;

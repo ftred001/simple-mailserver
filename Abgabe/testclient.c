@@ -8,14 +8,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define PORTNUMMER 1234
+#define PORTNUMMER 8110
 
 int main(int argc, char *argv[]) {
-	char buffer[80];
+	char buffer[1024];
 	int wert, sockfd, n;
 	struct sockaddr_in servaddr;
 	char *host = argv[1];
-	char *nachricht = argv[2];
+	char *nachricht = (char*)calloc(1024, sizeof(char));
 	
 	if (inet_aton(host, &servaddr.sin_addr)==0) {
 		perror("inet_aton"); exit(1);
@@ -34,13 +34,16 @@ int main(int argc, char *argv[]) {
 		perror("connect"); exit(-1);
 	}
 	
-	strcat(nachricht, "\r\n");
-	
+	strcpy(nachricht, "user joendhard\r\n");
 	write(sockfd, nachricht, strlen(nachricht));
+	n = read(sockfd, buffer, 1024);
+	printf("Empfangene MSG: %s\n", buffer);
 	
-	n = read(sockfd, buffer, sizeof(buffer)+1);
-	sscanf(buffer, "%d", &wert);
-	printf("Empfangene Zahl: %d\n", wert);
+	
+	strcpy(nachricht, "pass biffel\r\n");
+	write(sockfd, nachricht, strlen(nachricht));
+	n = read(sockfd, buffer, 1024);
+	printf("Empfangene MSG: %s\n", buffer);
 	
 	close(sockfd);
 	

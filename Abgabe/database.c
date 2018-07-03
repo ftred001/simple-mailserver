@@ -21,12 +21,10 @@ int speichern(int fd, DBRecord *dbr) {
 int db_list(const char *path, int outfd, 
   int (*filter)(DBRecord *rec, const void *data), const void *data) {
 	/* TODO: Fehlerfälle prüfen. */
-	int infd, file_length,i,s;
-	int key_rest, cat_rest, value_rest;
+	int infd, file_length,i;
 	unsigned long data_count;
 	DBRecord *record_map;
 	char *zeile = (char*)calloc(1024, sizeof(char));
-	char *separator = "|";
 	int filter_res = 2;
 	
     printf("LIST FILE: %s",path);
@@ -71,34 +69,7 @@ int db_list(const char *path, int outfd,
 		if ((filter_res = filter(&record_map[i],data))) {
 			
 			sprintf(zeile, "%d: %s | %s | %s\n", i, record_map[i].key, record_map[i].cat, record_map[i].value);
-			
-			/*
-			zeile = strcat(zeile, separator);
-
-			zeile = strcat(zeile, record_map[i].key);
-			key_rest = DB_KEYLEN - strlen(record_map[i].key);
-			for (s=0; s<key_rest; s++) {
-				zeile = strcat(zeile, " ");
-			}
-			zeile = strcat(zeile, separator);
-			
-
-			zeile = strcat(zeile, record_map[i].cat);
-			cat_rest = DB_CATLEN - strlen(record_map[i].cat);
-			for (s=0; s<cat_rest; s++) {
-				zeile = strcat(zeile, " ");
-			}
-			zeile = strcat(zeile, separator);
-			
-
-			zeile = strcat(zeile, record_map[i].value);
-			value_rest = DB_VALLEN - strlen(record_map[i].value);
-			for (s=0; s<value_rest; s++) {
-				zeile = strcat(zeile, "");
-			}
-			zeile = strcat(zeile, separator);
-			zeile = strcat(zeile, "\n"); */
-            
+			        
 
             if (write(outfd, zeile, strlen(zeile)) <0) {
                 perror("speichern (write)");

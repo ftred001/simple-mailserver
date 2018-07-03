@@ -54,6 +54,8 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	char *argv[10]; /* Maximale Anzahl an Parametern. */
 	char *wort;
 	
+	memset(&rec, 0, sizeof(DBRecord));
+	
 	line[strlen(line)-1] = '\0';
 	
 	wort = strtok(line, delimiter);
