@@ -13,13 +13,20 @@ pop3: pop3.c dialog.c linebuffer.c database.c fileindex.c
 testlb: testlb.c linebuffer.c
 	$(CC) $(CFLAGS) -o testlb testlb.c linebuffer.c
 	
-mailserver: mailserver.c pop3.c database.c
-	$(CC) $(CFLAGS) -o mailserver mailserver.c pop3.c database.c
+mailserver: mailserver.c pop3.c database.c linebuffer.c fileindex.c dialog.c
+	$(CC) $(CFLAGS) -o mailserver mailserver.c pop3.c database.c linebuffer.c fileindex.c dialog.c
 
-run: pop3
-	./pop3
+testclient: testclient.c
+	$(CC) $(CFLAGS) testclient.c -o testclient
+
+run: mailserver
+	./mailserver
 
 
 clean:
 	rm pop3
 	rm dbm
+	rm mailserver
+	rm database
+	rm dbm
+	rm testlb

@@ -1,33 +1,38 @@
-#include "pop3.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
+#include <unistd.h>
+
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include "database.h"
 #include "pop3.h"
 
-#define DEF_PORT "8110"
+#define PORTNUMMER 1234
 
-int listenfd;
-struct in_addr *inp;
+/* Sockets: Immer bidirektional!
+ * 1) Socket erstollen mit socket(int domain, int type, int protocol)
+ * 2) Zu einer IP und Port connecten: connect()
+ * 
+ * */
 
-DBRecord *get_portDBR(char *port) {
+
+DBRecord *get_portDBR(int port) {
 	DBRecord *dbrec = (DBRecord*)calloc(1, sizeof(DBRecord));
-	int value = atoi(port);
+	char *port_string = "1234"; 
+	
 	
 	strcpy(dbrec->key,"port");
 	strcpy(dbrec->cat,"pop3"); 
-	strcpy(dbrec->value, port);
+
 	
-	if (value<=1024 || value > 65535) {
-		strcpy(dbrec->value, DEF_PORT);
+	if (port>1024 && port < 65535) {
+		sprintf(port_string, "%d", port);
 	}
+	
+	strcpy(dbrec->value, port_string);
 	
 	return dbrec;
 }
@@ -41,56 +46,59 @@ DBRecord *get_ipDBR(char *ip_adress) {
 	return dbrec;
 }
 
-void startServer(char* port) {
-	struct addrinfo hints, *res, *p;
+int conn_made(int clientsockfd) {
+	ssize_t size;
+	char *nachricht = (char*)calloc(1024, sizeof(char));
 	
-	/* getaddrinfo for hosts */;
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-	
-	if (getaddrinfo(NULL,port &hints, &res) != 0) {
-		perror("gettaddrinfo() error");
-		exit(1);
+	size = recv(clientsockfd, nachricht, 1024, 0);
+	if (size <0) {
+		perror("recv");
+		return -1;
 	}
 	
-	for (p = res; p!=NULL; p=p->ai_next) {
-		listenfd = socket(p->ai_family; p->ai_socktype, 0);
-		if (listenfd == -1) {
-			continue;
-		}
-		
-		if (bind(listenfd, p->addr, p->ai_addrlen) == 0) {
-			break;
-		}
-		
-		if (p==NULL) {
-			perror("socket() or bind()");
-			exit(1);
-		}
-		
-		freeaddrinfo(res);
-		
-		if (listen(listenfd, 1000000) != 0) {
-			perror("listen() error");
-			exit(1);
-		}
-		
-	}
+	printf("Received %ld bytes...\n", size);
 	
+	printf("%s\n", nachricht);
+
 	
+	sprintf(nachricht, "%ld\r\n", size+2);
+	write(clientsockfd, nachricht, size+2);
+	return 0;
 }
 
-int main(int argc, char* argv[]) {
-	struct sockaddr_in clientaddr;
-	socklen_t addrlen;
-	char c;
+int main(void) {
+	int sockfd, newsockfd, clientlen;
+	struct sockaddr_in servaddr, clientaddr;
 	
-	/* Default Values */
-	char PORT[6] = DEF_PORT;
 	
-	startServer("1337");
-
+	printf("Starting Mailserver...\n");
+	
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(PORTNUMMER);
+	
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("socket"); exit(-1);
+	}
+	
+	if (bind(sockfd, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) <0) {
+		perror("bind"); exit(-1);
+	}
+	
+	if (listen(sockfd,5)<0) { perror("listen"); exit(-1);}
+	
+	printf("Waiting for connections!\n");
+	
+	for (;;) {
+		clientlen = sizeof(struct sockaddr);
+		newsockfd = accept(sockfd, (struct sockaddr*)&clientaddr, &clientlen);
+		
+		if (newsockfd <0) { perror("accept"); exit(-1);}
+		
+		conn_made(newsockfd);
+		
+		close(newsockfd);
+	}
+	
 	return 0;
 }
