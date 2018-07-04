@@ -18,7 +18,7 @@
 
 
 const char *STD_FILEPATH = "mailserver.db";
-char lockfilepath[LINEMAX];
+char lockfile_path[LINEMAX] = {0};
 static int clientsocket;
 
 DialogRec dialogspec[] = {
@@ -36,7 +36,7 @@ DialogRec dialogspec[] = {
 };
 
 void pop_sighandler(int sig) {
-	remove(lockfilepath);
+	remove(lockfile_path);
 	close(clientsocket);
 	exit(1);
 }
@@ -80,10 +80,12 @@ int process_pop3(int infd, int outfd) {
     int db_index;
 	DBRecord dbRec =  {"","",""};
 	const char *line_separator = "\n";
+	const char *MSG_SEPARATOR = "\r\n";
 	char line[LINEMAX] ={0};
 	char msg_line[LINEMAX] = {0};
 	char response[LINEMAX] = {0};
 	LineBuffer *msg_buf;
+	LineBuffer *line_buffer;
     FileIndexEntry *fi_entry;
     int msgno;
     int msg_fd;
@@ -93,8 +95,7 @@ int process_pop3(int infd, int outfd) {
     
     int state = 0;
 
-	int mailcount = 0;
-	FileIndex *file_index;
+	FileIndex *file_index = NULL;
 	int running = 0;
 	
     
@@ -111,20 +112,25 @@ int process_pop3(int infd, int outfd) {
 		write(outfd,response,strlen(response)+1);
 		running = 1;
 	}
-
+	
+	line_buffer = buf_new(infd, MSG_SEPARATOR);
 
 	while(1) {
 		memset(line, 0, LINEMAX);
-		read(infd, line, sizeof(line));
+		buf_readline(line_buffer, line, LINEMAX);
+		line[strlen(line)] = '\0';
+		
 		printf("Line: %s\n",line);
 		prolRes = processLine(line, state, dialogspec);
 		printRes(prolRes);
         
         if (prolRes.dialogrec != NULL) {
-            state = prolRes.dialogrec->nextstate;
+            
+            if (!prolRes.failed) {
+				state = prolRes.dialogrec->nextstate;
+			}
             
 
-            
             /* 0 User Login */
             if (!strcasecmp(prolRes.dialogrec->command, "user")) {
                 strcpy(dbRec.key, prolRes.dialogrec->param);
@@ -136,7 +142,9 @@ int process_pop3(int infd, int outfd) {
 
                     strcpy(username, prolRes.dialogrec->param);
                     strcpy(mailbox, dbRec.value);
-                    printf("User %s found\n", prolRes.dialogrec->param); 
+                    printf("User %s found\n", prolRes.dialogrec->param);
+                    sprintf(lockfile_path, "%s.lock", mailbox);
+                     
                 } else {
 					printf("User %s not found\n", prolRes.dialogrec->param); 
 				}
@@ -161,7 +169,13 @@ int process_pop3(int infd, int outfd) {
 							perror("Init FileIndex");
 							sprintf(response, "-ERR coudlnt init fileindex\r\n");
 						} else {
-							sprintf(response, "+OK Logged in\r\n");
+							if (!lock_file(lockfile_path)) {
+								sprintf(response, "-ERR User is locked in\r\n");
+							} else {
+								sprintf(response, "+OK Logged in\r\n");
+							}
+							
+							
 						}
                     
 					} else  {
@@ -307,6 +321,8 @@ int process_pop3(int infd, int outfd) {
                 fi_compactify(file_index);           
                 fi_dispose(file_index);
                 state = 0;
+                unlock_file(lockfile_path);
+                
                 sprintf(response, "+OK Logging out.\r\n");
                 
                 /* Schicke Antwort an OUT_FD */
@@ -314,7 +330,9 @@ int process_pop3(int infd, int outfd) {
 					perror("CRITICAL! Couldnt write to OUTFD");
 				}
 				
-                return -1;
+				
+				
+                return 0;
             }
 		
 		} else {
@@ -340,7 +358,8 @@ int process_pop3(int infd, int outfd) {
 	if(file_index != NULL){
 		fi_dispose(file_index);
 	}
-
+	
+	buf_dispose(line_buffer);
 	
 	return 0;
 }
