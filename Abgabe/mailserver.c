@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
@@ -47,9 +48,10 @@ int main(void) {
 	int running=1, pid, port, host;
 	struct sockaddr_in servaddr, clientaddr;
 	fd_set readfds, writefds;
-	int maxfd;
+	int nfds;
 	pthread_t thread_id;
 	socklen_t clientlen;
+	int sel_result;
 	
 	DBRecord pop3_portrec = {"port", "pop3", ""};
 	DBRecord pop3_hostrec = {"host", "pop3", ""};
@@ -75,6 +77,8 @@ int main(void) {
 		strcpy(pop3_hostrec.value, LOCALHOST);
 	}
 	
+	printf("POP3-Settings: %s %s\n", pop3_hostrec.value, pop3_portrec.value);
+	
 	/* create Socket */
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -98,7 +102,6 @@ int main(void) {
 	}
 	
 	
-	
 	/* SMTP Setup */
 	port = db_search(mail_server_filepath, 0, &smtp_portrec);
 	if(port >= 0){
@@ -115,6 +118,9 @@ int main(void) {
 	} else {
 		strcpy(smtp_hostrec.value, LOCALHOST);
 	}
+	
+	printf("SMTP-Settings: %s %s\n", smtp_hostrec.value, smtp_portrec.value);
+
 	
 	servaddr.sin_family = AF_INET;
 	/*servaddr.sin_addr.s_addr = htonl(INADDR_ANY);*/
@@ -140,6 +146,8 @@ int main(void) {
 		exit(-1);
 	}
 	
+	printf("Server running...\n");
+	
 	
 	/* */
 	for(;;) {
@@ -152,15 +160,20 @@ int main(void) {
 		FD_SET(smtpsock, &readfds);
 		
 		if(popsock < smtpsock) {
-			maxfd = smtpsock;
+			nfds = smtpsock;
 		} else {
-			maxfd = popsock;
+			nfds = popsock;
 		}
 		
-		/* Comment */
-		if (select(maxfd+1, &readfds, &writefds, NULL, NULL) <0) {
+		/* Selectfunktion 
+		int select(int nfds, fd_set *readfds, fd_set *writefds,
+                  fd_set *exceptfds, struct timeval *timeout); */
+
+		if ((sel_result = select(nfds, &readfds, &writefds, NULL, NULL)) <0) {
 			perror("select()"); exit(1);
 		}
+		printf("FD Count: %d\n",sel_result);
+		
 		
 		/* POP3 Handling */
 		if (FD_ISSET(popsock, &readfds)) {

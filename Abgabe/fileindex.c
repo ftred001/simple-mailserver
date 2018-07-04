@@ -168,7 +168,7 @@ void fi_dispose(FileIndex *fi) {
 	FileIndexEntry *entry = fi->entries;
 	FileIndexEntry *n;
 	
-	/* printf(">>>fi_dispose(FileIndex *fi)\n"); */
+	printf(">>>fi_dispose(FileIndex *fi)\n");
 	
 	while (entry->next != NULL) {
 		n = entry->next;
@@ -181,7 +181,7 @@ void fi_dispose(FileIndex *fi) {
 	
 	free(fi);
 	fi = NULL;
-	/* printf("---Disposing Entries succesful!\n"); */
+	printf("---Disposing Entries succesful!\n");
 }
 
 /* return Zeiger auf FileIndexEntry zum Listenelement n

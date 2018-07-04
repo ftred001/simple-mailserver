@@ -107,7 +107,6 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
     
     
     memset(line, 0, strlen(line));
-    free(cmd);
 	return result;
 }
 
