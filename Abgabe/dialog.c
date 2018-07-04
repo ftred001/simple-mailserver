@@ -75,6 +75,7 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 		strcpy(infomsg, "The following command was not found: ");
 		strcat(infomsg, cmd);
 		strcpy(result.info, infomsg);
+		result.failed = 1;
         return result;
 	}
 	

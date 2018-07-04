@@ -18,7 +18,7 @@
 
 
 const char *STD_FILEPATH = "mailserver.db";
-char lockfile_path[LINEMAX] = {0};
+char pop_lockfile[LINEMAX] = {0};
 static int clientsocket;
 
 DialogRec dialogspec[] = {
@@ -36,12 +36,12 @@ DialogRec dialogspec[] = {
 };
 
 void pop_sighandler(int sig) {
-	remove(lockfile_path);
+	remove(pop_lockfile);
 	close(clientsocket);
 	exit(1);
 }
 
-int lock_file(char *path) {
+int lock_pop_fp(char *path) {
 	int fd, bytes_read;
 	char pid[20];
 	
@@ -68,7 +68,7 @@ int lock_file(char *path) {
 	return 1;	
 }
 
-int unlock_file(char *path) {
+int unlock_pop_fp(char *path) {
 	return (unlink(path) == 0);
 }
 
@@ -122,13 +122,16 @@ int process_pop3(int infd, int outfd) {
 		
 		printf("Line: %s\n",line);
 		prolRes = processLine(line, state, dialogspec);
-		printRes(prolRes);
+		
+		
         
-        if (prolRes.dialogrec != NULL) {
+        if (!prolRes.failed) {
             
-            if (!prolRes.failed) {
-				state = prolRes.dialogrec->nextstate;
-			}
+            printRes(prolRes);
+            
+            /* Standardverfahren */
+			state = prolRes.dialogrec->nextstate;
+			sprintf(response, "-ERR Command not found\r\n");
             
 
             /* 0 User Login */
@@ -143,7 +146,7 @@ int process_pop3(int infd, int outfd) {
                     strcpy(username, prolRes.dialogrec->param);
                     strcpy(mailbox, dbRec.value);
                     printf("User %s found\n", prolRes.dialogrec->param);
-                    sprintf(lockfile_path, "%s.lock", mailbox);
+                    sprintf(pop_lockfile, "%s.lock", mailbox);
                      
                 } else {
 					printf("User %s not found\n", prolRes.dialogrec->param); 
@@ -169,7 +172,7 @@ int process_pop3(int infd, int outfd) {
 							perror("Init FileIndex");
 							sprintf(response, "-ERR coudlnt init fileindex\r\n");
 						} else {
-							if (!lock_file(lockfile_path)) {
+							if (!lock_pop_fp(pop_lockfile)) {
 								sprintf(response, "-ERR User is locked in\r\n");
 							} else {
 								sprintf(response, "+OK Logged in\r\n");
@@ -277,11 +280,15 @@ int process_pop3(int infd, int outfd) {
 					*/
 					
 					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i <= fi_entry->lines)) {
-						sprintf(response, "%s\r\n",msg_line);
 						
-						if (write(outfd, response, strlen(response)+1) <0) {
-							perror("Error bei Write");
+						if (msg_i>1) {
+							sprintf(response, "%s\r\n",msg_line);
+						
+							if (write(outfd, response, strlen(response)+1) <0) {
+								perror("Error bei Write");
+							}
 						}
+
 						
 						msg_line[0] = '\0';
 						msg_i++;
@@ -297,6 +304,13 @@ int process_pop3(int infd, int outfd) {
             /* 2 noop */
             if (!strcasecmp(prolRes.dialogrec->command, "noop")) {    
                 sprintf(response, "+OK\r\n");
+            }
+            
+            /* 2 RSET */
+            if (!strcasecmp(prolRes.dialogrec->command, "rset")) {
+				/* Muss Compactify ausführen */
+				    
+                sprintf(response, "-ERR not implemented! \r\n");
             }
             
             /* 2 dele msgno */
@@ -321,7 +335,7 @@ int process_pop3(int infd, int outfd) {
                 fi_compactify(file_index);           
                 fi_dispose(file_index);
                 state = 0;
-                unlock_file(lockfile_path);
+                unlock_pop_fp(pop_lockfile);
                 
                 sprintf(response, "+OK Logging out.\r\n");
                 
@@ -336,13 +350,10 @@ int process_pop3(int infd, int outfd) {
             }
 		
 		} else {
-            sprintf(response, "-ERR ProlResult IS NULL\r\n");
+			printf("prolRes failed\n");
+            sprintf(response, "-ERR ProlResult failed.\r\n");
         }
-        
-        if (strlen(response)) {
-			printf("%s", response);
-		}
-		
+        		
 		
 		/* Schicke Antwort an OUT_FD */
 		if (write(outfd, response, strlen(response)) <0) {

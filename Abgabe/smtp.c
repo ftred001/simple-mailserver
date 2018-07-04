@@ -16,13 +16,13 @@
 #include <time.h>
 
 static int clientsockfd;
-char absender[100];
-char fromLine[100];
-char smtpLockfilepath[LINEMAX] = {0};
+char sender[100];
+char FROM[100];
+char smtp_lockfile[LINEMAX] = {0};
 char mailbox[255];
 char message[PARAMMAX] = "";
 
-int smtpFreigeben(char *pfad);
+int unlock_smtp_fp(char *pfad);
 
 int validate_rcpt(DialogRec *d) {
 	int index;
@@ -38,13 +38,13 @@ int validate_rcpt(DialogRec *d) {
 	
 	strcpy(empf.key, rcpt);
 	
-	index = db_search("datafile.dat", 0, &empf);
+	index = db_search("mailserver.db", 0, &empf);
 	if(index < 0){
 		strcpy(message, "550 unknown rcpt\r\n");
 		return 0;
 	}
 	
-	get = db_get("datafile.dat", index, &empf);
+	get = db_get("mailserver.db", index, &empf);
 	if(get < 0){
 		strcpy(message, "500 Fehler!\r\n");
 		return 0;
@@ -69,22 +69,22 @@ DialogRec smtpDialog[] = {
 
 
 
-void smtpSigHandler(int sig){
+void smtp_sighandler(int sig){
 	/*remove(lockfilepath);*/
-	smtpFreigeben(smtpLockfilepath);
+	unlock_smtp_fp(smtp_lockfile);
 	close(clientsockfd);
 	exit(1);
 }
 
-void buildFromLine(){
+void create_FROM(){
 	time_t t;
 	
-	memset(fromLine, 0, 100);
+	memset(FROM, 0, 100);
 	time(&t);
-	sprintf(fromLine, "From %s %s", absender, ctime(&t));
+	sprintf(FROM, "From %s %s", sender, ctime(&t));
 }
 
-int smtpSperren(char *pfad){
+int lock_smtp_fp(char *pfad){
 	int fd;
 	int fdContent;
 	char pid[100];
@@ -113,12 +113,12 @@ int smtpSperren(char *pfad){
 	return 1;
 }
 
-int smtpFreigeben(char *pfad){
+int unlock_smtp_fp(char *pfad){
 	return (unlink(pfad) == 0);
 }
 
 
-int writeToMailbox(char *pfad){
+int append_to_mailbox(char *pfad){
 	
 	int filefd = open(pfad, O_WRONLY | O_APPEND, 0640);
 	if(filefd < 0){
@@ -126,7 +126,7 @@ int writeToMailbox(char *pfad){
 		exit(2);
 	}
 	
-	write(filefd, fromLine, strlen(fromLine));
+	write(filefd, FROM, strlen(FROM));
 	
 	return filefd;
 }
@@ -139,10 +139,10 @@ int process_smtp(int infd, int outfd){
 	char filepath[LINEMAX] = {0};
 	int filefd;
 	int state = 0;
-	DBRecord record = {"xyz", "mailbox", ""};
-	int foundRecord;
+	DBRecord db_record = {"", "", ""};
+	int db_index;
 	
-	LineBuffer *b;
+	LineBuffer *linebuf;
 	int readline;
 	
 	char *absEnd;
@@ -150,7 +150,7 @@ int process_smtp(int infd, int outfd){
 	
 	clientsockfd = infd;
 	
-	signal(SIGINT, smtpSigHandler);
+	signal(SIGINT, smtp_sighandler);
 	
 	write(outfd, "220 meinmailserver.de\r\n", 23);
 	
@@ -164,9 +164,9 @@ int process_smtp(int infd, int outfd){
 				exit(2);
 			}
 			
-			b = buf_new(infd, "\r\n");
+			linebuf = buf_new(infd, "\r\n");
 			
-			while((readline = buf_readline(b, buffer, LINEBUFFERSIZE)) != -1){
+			while((readline = buf_readline(linebuf, buffer, LINEBUFFERSIZE)) != -1){
 				if(!strcmp(buffer, ".")){
 					result = processLine(buffer, state, smtpDialog);
 					if(!result.failed){
@@ -202,11 +202,11 @@ int process_smtp(int infd, int outfd){
 			result = processLine(buffer, state, smtpDialog);
 			if(!result.failed){
 				state = result.dialogrec->nextstate;
-				memset(absender, 0, 100);
+				memset(sender, 0, 100);
 				absStart = strstr(buffer, "<");
 	
-				strcpy(absender, absStart+1);
-				absEnd = strstr(absender, ">");
+				strcpy(sender, absStart+1);
+				absEnd = strstr(sender, ">");
 				strcpy(absEnd, "\0");
 				
 				write(outfd, "250 Ok\r\n", strlen("250 Ok\r\n"));
@@ -220,17 +220,17 @@ int process_smtp(int infd, int outfd){
 			result = processLine(buffer, state, smtpDialog);
 			if(!result.failed){
 				state = result.dialogrec->nextstate;
-				strcpy(record.key, mailbox);
+				strcpy(db_record.key, mailbox);
 				
-				foundRecord = db_search("datafile.dat", 0, &record);
-				if(foundRecord >= 0){
-					db_get("datafile.dat", foundRecord, &record);
+				db_index = db_search("mailserver.db", 0, &db_record);
+				if(db_index >= 0){
+					db_get("mailserver.db", db_index, &db_record);
 				}
 				
-				strcpy(filepath, record.value);
-				sprintf(smtpLockfilepath, "%s.lock", mailbox);
+				strcpy(filepath, db_record.value);
+				sprintf(smtp_lockfile, "%s.lock", mailbox);
 				
-				if(!smtpSperren(smtpLockfilepath)){
+				if(!lock_smtp_fp(smtp_lockfile)){
 					write(outfd, "500 Fehler beim oeffnen\r\n", strlen("500 Fehler beim oeffnen\r\n"));
 					exit(1);
 				}
@@ -247,8 +247,8 @@ int process_smtp(int infd, int outfd){
 			if(!result.failed){
 				state = result.dialogrec->nextstate;
 				
-				buildFromLine();
-				filefd = writeToMailbox(filepath);
+				create_FROM();
+				filefd = append_to_mailbox(filepath);
 				
 				write(outfd, "354 End data with <CR><LF>.<CR><LF>\r\n", strlen("354 End data with <CR><LF>.<CR><LF>\r\n"));
 			} else {
@@ -272,7 +272,7 @@ int process_smtp(int infd, int outfd){
 			result = processLine(buffer, state, smtpDialog);
 			if(!result.failed){
 				state = result.dialogrec->nextstate;
-				smtpFreigeben(smtpLockfilepath);
+				unlock_smtp_fp(smtp_lockfile);
 				write(outfd, "221 Bye\r\n", strlen("221 Bye\r\n"));
 			} else {
 				write(outfd, error, strlen(error));
