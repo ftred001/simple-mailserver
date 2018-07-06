@@ -27,7 +27,6 @@ int db_list(const char *path, int outfd,
 	char *zeile = (char*)calloc(1024, sizeof(char));
 	int filter_res = 2;
 	
-    printf("LIST FILE: %s",path);
 	
     if (strlen(path)==0) {
         printf("ERROR: strlen(path) == 0!\n");
