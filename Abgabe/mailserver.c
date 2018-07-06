@@ -149,7 +149,6 @@ int main(void) {
 	printf("Server running...\n");
 	
 	
-	/* */
 	for(;;) {
 		
 		/* RESET FD SETS */
@@ -165,18 +164,17 @@ int main(void) {
 			nfds = popsock;
 		}
 		
-		/* Selectfunktion 
-		int select(int nfds, fd_set *readfds, fd_set *writefds,
-                  fd_set *exceptfds, struct timeval *timeout); */
+		nfds++;
+		
 
 		if ((sel_result = select(nfds, &readfds, &writefds, NULL, NULL)) <0) {
-			perror("select()"); exit(1);
+			perror("Fehler bei select()"); exit(1);
 		}
-		printf("FD Count: %d\n",sel_result);
 		
 		
 		/* POP3 Handling */
-		if (FD_ISSET(popsock, &readfds)) {
+		if (FD_ISSET(popsock, &readfds) ) {
+			/* Input von popsock verfügbar */
 			clientlen = (socklen_t)sizeof(struct sockaddr);
 			clientsock = accept(popsock, (struct sockaddr *)&clientaddr, &clientlen);
 			
@@ -184,15 +182,16 @@ int main(void) {
 				perror("accept");exit(-1);
 			}
 			
-			if((pid = fork()) == -1) {
+			pid = fork();
+			if (pid == -1) {
 				perror("Fehler bei fork()");
 			} else if (pid == 0){
-				/* Comment */
+				/* Sohn Prozess */
 				close(popsock);
 				process_pop3(clientsock, clientsock);
 				close(clientsock);
 			} else {
-				/* Comment */
+				/* Vater Process */
 				signal(SIGINT, mail_sighandler_father);
 				close(clientsock);
 				continue;
@@ -200,8 +199,9 @@ int main(void) {
 		}
 		
 
+		/* SMTP Handling */
 		if(FD_ISSET(smtpsock, &readfds)){
-			
+			/* Input von Deskriptor smtptsock verfügbar */
 			clientlen = (socklen_t) sizeof(struct sockaddr);
 			clientsock = accept(smtpsock, (struct sockaddr *) &clientaddr, &clientlen);
 			

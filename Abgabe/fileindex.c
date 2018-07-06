@@ -60,11 +60,11 @@ void print_fi(FileIndex *fi) {
  
  void print_entries(FileIndex *fi) {
 	FileIndexEntry *e = fi->entries;
-	printf(">>>Print Entries\n");
+	/*printf(">>>Print Entries\n"); */
 	
 	
 	if (e == NULL) {
-		printf("---NO ENTRIES FOUND!\n");
+		perror("---NO ENTRIES FOUND!\n");
 		return;
 	}
 	
@@ -94,6 +94,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 		return NULL;
 	}
 	
+	findex->filepath = (char*)calloc(MAXDATEIPFAD+1, sizeof(char));
+	
 	findex->filepath = filepath;
 	
 	
@@ -104,7 +106,6 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	if ((b = buf_new(fd, separator))== NULL) {
 		perror("buf_new == NULL");
 	}
-	
 	
 	
 	/* FIEntry für jeden Abschnitt. */
@@ -167,8 +168,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 void fi_dispose(FileIndex *fi) {
 	FileIndexEntry *entry = fi->entries;
 	FileIndexEntry *n;
-	
-	printf(">>>fi_dispose(FileIndex *fi)\n");
+	/*
+	printf(">>>fi_dispose(FileIndex *fi)\n");*/
 	
 	while (entry->next != NULL) {
 		n = entry->next;
@@ -181,7 +182,7 @@ void fi_dispose(FileIndex *fi) {
 	
 	free(fi);
 	fi = NULL;
-	printf("---Disposing Entries succesful!\n");
+	/*	printf("---Disposing Entries succesful!\n");*/
 }
 
 /* return Zeiger auf FileIndexEntry zum Listenelement n
@@ -191,7 +192,9 @@ void fi_dispose(FileIndex *fi) {
 FileIndexEntry *fi_find(FileIndex *fi, int n) {
 	FileIndexEntry *res = NULL;
 	
+	/*
 	printf(">>>Find Entry #%d\n",n);
+	*/
 	
 	if (fi == NULL) {
 		perror("file_index cannot be NULL!");
@@ -203,16 +206,17 @@ FileIndexEntry *fi_find(FileIndex *fi, int n) {
 		return NULL;
 	}
 	
+	/*
 	if (n>fi->nEntries) {
 		perror("Out of range");
 		return NULL;
-	}
+	}*/
 	
 	res = fi->entries;
 	
 	while(res != NULL) {
 		if (res->nr == n) {
-			printf("---Entry #%d found\n",n);
+			/* printf("---Entry #%d found\n",n);*/
 			return res;
 		}
 		res = res->next;
@@ -228,9 +232,71 @@ FileIndexEntry *fi_find(FileIndex *fi, int n) {
  * return != 0 bei FEHLER
  */
 int fi_compactify(FileIndex *fi) {
-	/* TODO Richtig implementieren!!! */ 
-	printf(">>>fi_compactify(FileIndex *fi)\n");
-	perror("fi_compactify NICHT implementiert!");
+	int read_fd, write_fd, geschrieben;
+	LineBuffer *linebuf;
+	char line[LINEBUFFERSIZE] = {0};
+	int umbruch;
+	FileIndexEntry *entry;
+	
+	entry = fi->entries;
+	
+	read_fd = open(fi->filepath, O_RDONLY);
+	
+	if (read_fd < 0) {
+		perror("Bei Oeffnen der Eingabedatei");
+		return 1;
+	}
+	
+	write_fd = open("cache.mbox", O_WRONLY|O_TRUNC|O_CREAT, 0644);
+	
+	if (write_fd < 0) {
+		perror("Bei Oeffnen der Ausgabedatei");
+		return 1;
+	}
+	
+	linebuf = buf_new(read_fd, "\n");
+	
+	while((umbruch = buf_readline(linebuf, line, LINEBUFFERSIZE)) != -1){
+		
+		if(entry != NULL){
+			
+
+			
+			if (entry->del_flag) {
+				/* Diese Lines werden übersprungen */
+				/*printf("Umbruch %d Entry#%d Del: %d Entry->Seekpos: %d BUF: %d\n", umbruch, entry->nr, entry->del_flag, entry->seekpos,  buf_where(linebuf));*/
+				/*printf("%s\n", line);*/
+			
+			} else {
+				line[strlen(line)] = '\n';
+				geschrieben = write(write_fd, line, strlen(line));
+
+				if (geschrieben <= 0) {
+					perror("Schreibfehler");
+					return 1;
+				}
+			}
+			
+			/* Wenn Entry Range nicht mehr bei buf_where() ist: */ 
+			if ((entry->seekpos + entry->size) == umbruch) {
+				/*printf(">>BREAK HIER %d %s", umrbuch, line);*/
+				entry = entry->next;
+			}
+			
+
+		}
+		
+		memset(&line[0], 0, LINEBUFFERSIZE);
+	}
+
+	close(read_fd); 
+	close(write_fd);
+	buf_dispose(linebuf);
+	
+	
+	remove(fi->filepath);
+	rename("cache.mbox", fi->filepath);
+
 	
 	return 0;
 }

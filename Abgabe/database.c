@@ -262,7 +262,7 @@ int db_del(const char *filepath, int index) {
     
     
     if (index >= data_count || index < 0) {
-        printf("Index-Error DataCount: %ld Geforderter Index: %d\n", data_count, index);
+        /* printf("Index-Error DataCount: %ld Geforderter Index: %d\n", data_count, index);*/
         close(fd);
         return -1;
     }
