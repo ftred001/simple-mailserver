@@ -102,7 +102,7 @@ int process_pop3(int infd, int outfd) {
 	signal(SIGINT, pop_sighandler);
 	
 	if (running == 0) {
-		sprintf(response,"+OK Halli Hallo auf dem fast guten Mailserver! ready.\r\n");
+		sprintf(response,"+OK POP3 ready.\r\n");
 		write(outfd,response,strlen(response)+1);
 		running = 1;
 	}
@@ -133,7 +133,7 @@ int process_pop3(int infd, int outfd) {
             if (!strcasecmp(prolRes.dialogrec->command, "user")) {
                 strcpy(dbRec.key, prolRes.dialogrec->param);
                 strcpy(dbRec.cat, "mailbox");
-                strcpy(response, "+OK\r\n");
+                strcpy(response, "+OK username accepted\r\n");
                 
                 
                 if ((db_index = db_search(STD_FILEPATH, 0, &dbRec)>=0)) {
@@ -141,7 +141,7 @@ int process_pop3(int infd, int outfd) {
                     strcpy(mailbox_path, dbRec.value);
                     /* printf("User %s found\n", prolRes.dialogrec->param);*/
                     sprintf(pop_lockfile, "%s.lock", mailbox_path);
-                    printf("Lockfile heißt %s\n", pop_lockfile);
+                    /* printf("Lockfile heißt %s\n", pop_lockfile); */
                     
                 } else {
 					printf("User %s not found\n", prolRes.dialogrec->param); 
@@ -170,7 +170,7 @@ int process_pop3(int infd, int outfd) {
 							if (!lock_pop_fp(pop_lockfile)) {
 								sprintf(response, "-ERR User is locked in\r\n");
 							} else {
-								sprintf(response, "+OK Logged in\r\n");
+								sprintf(response, "+OK Logged in.\r\n");
 							}
 							
 							
@@ -202,6 +202,10 @@ int process_pop3(int infd, int outfd) {
                     sprintf(response, "-ERR no mails on server\r\n");
                 } else {
 					sprintf(response, "+OK %d messages:\r\n", file_index->nEntries);
+					if (write(outfd, response, strlen(response)+1) <0) {
+						perror("responding (write)");
+					}
+                    
                     fi_entry = file_index->entries;
                     
                     while(fi_entry) {
@@ -270,7 +274,7 @@ int process_pop3(int infd, int outfd) {
 					/* Zeilenweise ausgeben */
 					msg_i =1;
 					
-					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i <= fi_entry->lines)) {
+					while (((buf_readline(msg_buf, msg_line, LINEBUFFERSIZE)) !=-1) && (msg_i < fi_entry->lines)) {
 						
 						if (msg_i>1) {
 							sprintf(response, "%s\r\n",msg_line);
