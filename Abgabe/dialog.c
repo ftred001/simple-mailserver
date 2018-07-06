@@ -6,17 +6,7 @@
 
 int globalstate = 0;
 
-int validate_noparam(DialogRec *d) {
-    if(strlen(d->param) == 0) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
 
-int validate_hasparam(DialogRec *d) {
-	return strlen(d->param);
-}
 
 int validator(DialogRec *d) {
 	if (d->validator!=NULL) {
@@ -24,7 +14,6 @@ int validator(DialogRec *d) {
 	}
 	return 1;
 }
-
 
 /* Returns DialogRec if found. Else NULL */
 DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {

@@ -18,8 +18,6 @@
 #include <pthread.h>
 
 
-
-
 const char *LOCALHOST = "127.0.0.1";
 const char *STD_POP3_PORT = "8110";
 const char *STD_SMTP_PORT = "8025";

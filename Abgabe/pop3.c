@@ -21,25 +21,10 @@ const char *STD_FILEPATH = "mailserver.db";
 char pop_lockfile[MAXDATEIPFAD] = {0};
 static int clientsocket;
 
-DialogRec dialogspec[] = {
-	/* Command,		Param, 	State,	Next-State,	Validator */
-	{ "user", 		"",		0,		1,			validate_hasparam },
-	{ "pass",		"",		1,		2,			validate_hasparam },
-	{ "stat", 		"", 	2,		2,			validate_noparam },
-	{ "list", 		"", 	2,		2,			},
-	{ "retr", 		"",		2,		2,			validate_hasparam },
-	{ "noop",		"",		2,		2,			validate_noparam },
-	{ "rset",		"",		2,		2,			validate_noparam  },
-	{ "dele",		"",		2,		2,			validate_hasparam },
-	{ "quit",		"",		2,		0,			validate_noparam },
-	{ "" }
-};
-
-void pop_sighandler(int sig) {
-	remove(pop_lockfile);
-	close(clientsocket);
-	exit(1);
+int unlock_pop_fp(const char *path) {
+	return (unlink(path) == 0);
 }
+
 
 int lock_pop_fp(const char *path) {
 	int fd, bytes_read;
@@ -68,9 +53,40 @@ int lock_pop_fp(const char *path) {
 	return 1;	
 }
 
-int unlock_pop_fp(const char *path) {
-	return (unlink(path) == 0);
+void pop_sighandler(int sig) {
+	unlock_pop_fp(pop_lockfile);
+	close(clientsocket);
+	exit(1);
 }
+
+
+
+DialogRec dialogspec[] = {
+	/* Command,		Param, 	State,	Next-State,	Validator */
+	{ "user", 		"",		0,		1,			validate_hasparam },
+	{ "pass",		"",		1,		2,			validate_hasparam },
+	{ "stat", 		"", 	2,		2,			validate_noparam },
+	{ "list", 		"", 	2,		2,			},
+	{ "retr", 		"",		2,		2,			validate_hasparam },
+	{ "noop",		"",		2,		2,			validate_noparam },
+	{ "rset",		"",		2,		2,			validate_noparam  },
+	{ "dele",		"",		2,		2,			validate_hasparam },
+	{ "quit",		"",		2,		0,			validate_noparam },
+	{ "" }
+};
+
+int validate_noparam(DialogRec *d) {
+    if(strlen(d->param) == 0) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+int validate_hasparam(DialogRec *d) {
+	return strlen(d->param);
+}
+
 
 
 /* Liest POP3 Kommands über infd */

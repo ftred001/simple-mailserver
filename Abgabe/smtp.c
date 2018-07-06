@@ -15,20 +15,55 @@
 #include <signal.h>
 #include <time.h>
 
-static int clientsockfd;
+static int clientsocket;
 char sender[100];
-char FROM[100];
-char smtp_lockfile[LINEMAX] = {0};
+char FROMLINE[100];
+char smtp_lockfile[MAXDATEIPFAD] = {0};
 char mailbox[255];
 char message[PARAMMAX] = "";
 
-int unlock_smtp_fp(char *pfad);
+
+
+int lock_smtp_fp(char *pfad){
+	int fd, bytes_read;
+	char pid[20];
+	
+	if((fd = open(pfad, O_RDWR | O_CREAT, 0644)) < 1) {
+		perror("Oeffne FD");
+		exit(1);
+	}
+	
+	bytes_read = read(fd, pid, 20);
+	
+	if(bytes_read > 0 && kill(atoi(pid), 0) == 0){
+		close(fd);
+		return 0;
+	}
+	
+	if (fd >= 0){
+		memset(&pid[0], 0, 20);
+		sprintf(pid, "%d", getpid());
+		write(fd, pid, strlen(pid));
+	}
+	close(fd);
+	return 1;
+}
+
+int unlock_smtp_fp(const char *pfad){
+	return (unlink(pfad) == 0);
+}
+
+void smtp_sighandler(int sig){
+	unlock_smtp_fp(smtp_lockfile);
+	close(clientsocket);
+	exit(1);
+}
 
 int validate_rcpt(DialogRec *d) {
 	int index;
 	int get;
-	char rcpt[100];
-	DBRecord empf = {"", "smtp", ""};
+	char rcpt[80];
+	DBRecord empfaenger_rec = {"", "smtp", ""};
 	char *end;
 	char *start = strstr(d->param, "<");
 	
@@ -36,190 +71,164 @@ int validate_rcpt(DialogRec *d) {
 	end = strstr(rcpt, ">");
 	strcpy(end, "\0");
 	
-	strcpy(empf.key, rcpt);
+	strcpy(empfaenger_rec.key, rcpt);
 	
-	index = db_search("mailserver.db", 0, &empf);
+	index = db_search("mailserver.db", 0, &empfaenger_rec);
 	if(index < 0){
 		strcpy(message, "550 unknown rcpt\r\n");
 		return 0;
 	}
 	
-	get = db_get("mailserver.db", index, &empf);
+	get = db_get("mailserver.db", index, &empfaenger_rec);
 	if(get < 0){
 		strcpy(message, "500 Fehler!\r\n");
 		return 0;
 	}
 	
 	memset(mailbox, 0, 255);
-	strcpy(mailbox, empf.value);
+	strcpy(mailbox, empfaenger_rec.value);
 	
 	return 1;
 }
 
-DialogRec smtpDialog[] = {
-	/* command, param, state, nextstate, validatosr */
-	{"helo", "", 0, 1},
-	{"mail from", "", 1, 2},
-	{"rcpt to", "", 2, 3, validate_rcpt},
-	{"data", "", 3, 4},
-	{".", "", 4, 5},
-	{"quit", "", 5, 0},
+
+DialogRec SMTP_DIALOG[] = {
+	/* Command,		Param, 	State,	Next-State,	Validator */
+	{"helo", 		"", 	0, 		1},
+	{"mail from", 	"", 	1, 		2},
+	{"rcpt to", 	"", 	2, 		3, 		validate_rcpt},
+	{"data", 		"", 	3, 		4},
+	{".", 			"", 	4, 		5},
+	{"quit", 		"", 	5, 		0},
 	{""}
 };
 
 
 
-void smtp_sighandler(int sig){
-	/*remove(lockfilepath);*/
-	unlock_smtp_fp(smtp_lockfile);
-	close(clientsockfd);
-	exit(1);
-}
 
-void create_FROM(){
+
+void create_fromline(){
 	time_t t;
-	
-	memset(FROM, 0, 100);
+	memset(FROMLINE, 0, 100);
 	time(&t);
-	sprintf(FROM, "From %s %s", sender, ctime(&t));
-}
-
-int lock_smtp_fp(char *pfad){
-	int fd;
-	int fdContent;
-	char pid[100];
-	fd = open(pfad, O_RDWR | O_CREAT, 0644);
-	
-	if(fd < 1) {
-		perror("ERROR! Oeffnen fehlgeschlagen!");
-		exit(1);
-	}
-	
-	fdContent = read(fd, pid, 100);
-	
-	if(fdContent > 0 && kill(atoi(pid), 0) == 0){
-		close(fd);
-		return 0;
-	}
-	
-	if (fd >= 0){
-		memset(&pid[0], 0, sizeof(pid));
-		sprintf(pid, "%d", getpid());
-		write(fd, pid, strlen(pid));
-	}
-	
-	close(fd);
-	
-	return 1;
-}
-
-int unlock_smtp_fp(char *pfad){
-	return (unlink(pfad) == 0);
+	sprintf(FROMLINE, "FROM %s %s", sender, ctime(&t));
 }
 
 
-int append_to_mailbox(char *pfad){
-	
-	int filefd = open(pfad, O_WRONLY | O_APPEND, 0640);
-	if(filefd < 0){
+
+/* Gibt FD für das Anhängen an Mailbox zurück */
+int append_to_mailbox(const char *pfad){
+	int fd = open(pfad, O_WRONLY | O_APPEND, 0640);
+	if(fd < 0){
 		perror("Bei Oeffnen der Eingabedatei");
 		exit(2);
 	}
-	
-	write(filefd, FROM, strlen(FROM));
-	
-	return filefd;
+	write(fd, FROMLINE, strlen(FROMLINE));
+	return fd;
 }
 
 
 int process_smtp(int infd, int outfd){
-	char buffer[LINEMAX];
-	ProlResult result;
+	char line[LINEMAX];
+	ProlResult prolRes;
 	char error[LINEMAX] = "500 Fehler!\r\n";
-	char filepath[LINEMAX] = {0};
-	int filefd;
+	char filepath[MAXDATEIPFAD] = {0};
+	int datafile;
 	int state = 0;
 	DBRecord db_record = {"", "", ""};
 	int db_index;
 	
 	LineBuffer *linebuf;
-	int readline;
+	int umbruch;
 	
-	char *absEnd;
-	char *absStart;
+	char *absender_end;
+	char *absender_start;
 	
-	clientsockfd = infd;
+	char response[LINEBUFFERSIZE] = {0};
+	
+	clientsocket = infd;
 	
 	signal(SIGINT, smtp_sighandler);
 	
-	write(outfd, "220 meinmailserver.de\r\n", 23);
+	write(outfd, "220 meinsmtpserver.de\r\n", strlen("220 meinsmtpserver.de\r\n")+1);
+	
+	
 	
 	while(1){
-		memset(buffer, 0, LINEMAX);
+		memset(line, 0, LINEMAX);
 		
 		if(state == 4){
 			
-			if(filefd < 0){
-				perror("Bei Oeffnen der Eingabedatei");
+			if(datafile < 0){
+				perror("Bei Oeffnen der datafile");
 				exit(2);
 			}
 			
+			
+			
 			linebuf = buf_new(infd, "\r\n");
 			
-			while((readline = buf_readline(linebuf, buffer, LINEBUFFERSIZE)) != -1){
-				if(!strcmp(buffer, ".")){
-					result = processLine(buffer, state, smtpDialog);
-					if(!result.failed){
-						state = result.dialogrec->nextstate;
-						write(filefd, "\n", 1);
-						close(filefd);
-						write(outfd, "250 Ok\r\n", strlen("250 Ok\r\n"));
+			while((umbruch = buf_readline(linebuf, line, LINEBUFFERSIZE)) != -1){
+				if(!strncmp(line, ".",1)){
+					prolRes = processLine(line, state, SMTP_DIALOG);
+					if(!prolRes.failed){
+						state = prolRes.dialogrec->nextstate;
+						write(datafile, "\n", 1);
+						close(datafile);
+						sprintf(response, "250 Ok\r\n");
 					} else {
+						printf("LineBuff error");
 						write(outfd, error, strlen(error));
 					}
 					break;
 				}
-				strcat(buffer, "\n");
-				write(filefd, buffer, strlen(buffer));
+				strcat(line, "\n");
+				write(datafile, line, strlen(line));
 			}
 			
 			continue;
 		}
 		
-		read(infd, buffer, sizeof(buffer));
+		read(infd, line, sizeof(line));
 		
-		if(!strncasecmp(buffer, "helo", 4)){
-			result = processLine(buffer, state, smtpDialog);
-			if(!result.failed){
-				state = result.dialogrec->nextstate;
-				write(outfd, "250 Ok\r\n", strlen("250 Ok\r\n"));
+		/* HELO */
+		if(!strncasecmp(line, "helo",4)){
+			printf("HELO\n");
+			prolRes = processLine(line, state, SMTP_DIALOG);
+			if(!prolRes.failed){
+				state = prolRes.dialogrec->nextstate;
+				sprintf(response, "250 Ok\r\n");
 			} else {
-				write(outfd, error, strlen(error));
+				sprintf(response, "%s",error);
+
 			}
 		}
-		else if(!strncasecmp(buffer, "mail from", 9)){
-			
-			result = processLine(buffer, state, smtpDialog);
-			if(!result.failed){
-				state = result.dialogrec->nextstate;
+		
+		/* MAIL FROM */
+		else if(!strncasecmp(line, "mail from",9)){
+			printf("MAIL FROM\n");
+			prolRes = processLine(line, state, SMTP_DIALOG);
+			printf("%s %s\n", prolRes.dialogrec->param, prolRes.dialogrec->command);
+			if(!prolRes.failed){
+				state = prolRes.dialogrec->nextstate;
 				memset(sender, 0, 100);
-				absStart = strstr(buffer, "<");
+				absender_start = strstr(line, "<");
 	
-				strcpy(sender, absStart+1);
-				absEnd = strstr(sender, ">");
-				strcpy(absEnd, "\0");
-				
-				write(outfd, "250 Ok\r\n", strlen("250 Ok\r\n"));
+				strcpy(sender, absender_start+1);
+				absender_end = strstr(sender, ">");
+				strcpy(absender_end, "\0");
+				sprintf(response, "250 Ok\r\n");
 			} else {
-				write(outfd, error, strlen(error));
+				sprintf(response, "%s", error);
 			}
-			
 		}
-		else if(!strncasecmp(buffer, "rcpt to", 7)){
-			
-			result = processLine(buffer, state, smtpDialog);
-			if(!result.failed){
-				state = result.dialogrec->nextstate;
+		
+		/* RCPT TO */
+		else if(!strncasecmp(line, "rcpt to",7)){
+			printf("rcpt to\n");
+			prolRes = processLine(line, state, SMTP_DIALOG);
+			if(!prolRes.failed){
+				state = prolRes.dialogrec->nextstate;
 				strcpy(db_record.key, mailbox);
 				
 				db_index = db_search("mailserver.db", 0, &db_record);
@@ -231,56 +240,65 @@ int process_smtp(int infd, int outfd){
 				sprintf(smtp_lockfile, "%s.lock", mailbox);
 				
 				if(!lock_smtp_fp(smtp_lockfile)){
-					write(outfd, "500 Fehler beim oeffnen\r\n", strlen("500 Fehler beim oeffnen\r\n"));
+					sprintf(response, "500 file locked.\r\n");
 					exit(1);
 				}
-				
-				write(outfd, "250 Ok\r\n", strlen("250 Ok\r\n"));
+				sprintf(response, "250 Ok\r\n");
 			} else {
-				write(outfd, result.info, strlen(result.info));
+				sprintf(response, "%s\r\n", prolRes.info);
 			}
 			
 		}
-		else if(!strncasecmp(buffer, "data", 4)){
-			
-			result = processLine(buffer, state, smtpDialog);
-			if(!result.failed){
-				state = result.dialogrec->nextstate;
+		
+		/* DATA */
+		else if(!strncasecmp(line, "data",4)){
+			printf("data\n");
+			prolRes = processLine(line, state, SMTP_DIALOG);
+			if(!prolRes.failed){
+				state = prolRes.dialogrec->nextstate;
 				
-				create_FROM();
-				filefd = append_to_mailbox(filepath);
-				
-				write(outfd, "354 End data with <CR><LF>.<CR><LF>\r\n", strlen("354 End data with <CR><LF>.<CR><LF>\r\n"));
+				create_fromline();
+				datafile = append_to_mailbox(filepath);
+				sprintf(response, "354 End data with <CR><LF>.<CR><LF>\r\n");
+
 			} else {
-				write(outfd, error, strlen(error));
+				sprintf(response, "%s", error);
 			}
 			
 		}
-		else if(!strncasecmp(buffer, ".", 1)){
-			
-			result = processLine(buffer, state, smtpDialog);
-			if(!result.failed){
-				state = result.dialogrec->nextstate;
-				write(outfd, "250 Ok\r\n", strlen("250 Ok\r\n"));
+		
+		/* . */
+		else if(!strncasecmp(line, ".",1)){
+			printf(".\n");
+			prolRes = processLine(line, state, SMTP_DIALOG);
+			if(!prolRes.failed){
+				state = prolRes.dialogrec->nextstate;
+				sprintf(response,"250 Ok\r\n");
 			} else {
-				write(outfd, error, strlen(error));
+				sprintf(response, "%s", error);
 			}
 			
 		}
-		else if(!strncasecmp(buffer, "quit", 4)){
-			
-			result = processLine(buffer, state, smtpDialog);
-			if(!result.failed){
-				state = result.dialogrec->nextstate;
+		
+		/* QUIT */
+		else if(!strncasecmp(line, "quit", 4)){
+			printf("quit\n");
+			prolRes = processLine(line, state, SMTP_DIALOG);
+			if(!prolRes.failed){
+				state = prolRes.dialogrec->nextstate;
 				unlock_smtp_fp(smtp_lockfile);
-				write(outfd, "221 Bye\r\n", strlen("221 Bye\r\n"));
+				sprintf(response, "221 Bye\r\n");
 			} else {
-				write(outfd, error, strlen(error));
+				sprintf(response, "%s", error);
 			}
+			write(outfd, response, strlen(response));
 			break;
 		} else {
-			write(outfd, error, strlen(error));
+			sprintf(response,"%s", error);
 		}
+		
+		write(outfd, response, strlen(response));
+		
 	}
 	
 	return 0;
