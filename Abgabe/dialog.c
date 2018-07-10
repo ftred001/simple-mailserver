@@ -20,17 +20,23 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
  	DialogRec *dialogrec = (DialogRec*)calloc(1, sizeof(DialogRec));
     int i;
     
-    /*
-    printf("DialogRec *findDialogRec(char *cmd, DialogRec dialogspec[])\n");
-    printf("command: %s\n----\n", command); */
+ 
+    /*printf("DialogRec *findDialogRec(char *cmd, DialogRec dialogspec[])\n");*/
+    /* printf("findDialogRec: %s\n", command);*/
     
 	for (i=0; i<CMDMAX; i++) {
 		if (strlen(dialogspec[i].command)) {
-			if (!(strcasecmp(command, dialogspec[i].command))) {
-                /*
-                 *  printf("Gefundener DialogSpec Command: %s\n----\n", dialogspec[i].command);
-                */
+			if (!(strncasecmp(command, dialogspec[i].command, strlen(dialogspec[i].command)))) {
+
+                /* printf("Gefundener DialogSpec Command: %s\n----\n", dialogspec[i].command);*/
+                command += strlen(dialogspec[i].command);
+                
+                /* printf("Rest Param: %s\n", command);*/
+
                 dialogrec = &dialogspec[i];
+                strcpy(dialogrec->param, command);
+                printf("drecord.command: %s param: X%sX\n", dialogrec->command, dialogrec->param);
+                
                 return dialogrec;
 			}
 		}
@@ -44,25 +50,18 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
 ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
 	ProlResult result;
 	DialogRec *drecord = (DialogRec*)calloc(1, sizeof(DialogRec));
-	char *cmd = (char*)calloc(CMDMAX, sizeof(char));
-	char *param = line;
 	char infomsg[GRMSGMAX];
 	
 	result.dialogrec = NULL;
 	result.failed = 1;
-    
     /* printf("processLine()\nLine: %s, state: %d\n-----\n", line,state); */
-	
-	cmd = __strtok_r(param, " ", &param);
-    
-    /* printf("cmd strtok: %s\n",cmd); */
-    
     drecord = findDialogRec(line, dialogspec);
+    
     
     if (drecord == NULL) {
         /* printf("drecord was NULL!\n"); */
 		strcpy(infomsg, "The following command was not found: ");
-		strcat(infomsg, cmd);
+		strcat(infomsg, line);
 		strcpy(result.info, infomsg);
 		result.failed = 1;
         return result;
@@ -74,7 +73,6 @@ ProlResult processLine(char line[LINEMAX], int state, DialogRec dialogspec[]) {
         /* printf("DRecord-State: %d ÜbergebenerState: %d\n----\n", drecord->state, state); */
 		if (drecord->state == state) {
             /* printf("drecord->state == übergebener State\n"); */
-			strcpy(drecord->param, param);
 			
 			/* Validate params */
             /* Lineprocessing successful */

@@ -87,7 +87,7 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	LineBuffer *b = NULL;
 	int fd, umbruch=0;
 	int linestart;
-	/* int lineend; */
+	int lineend;
 	
 	if ((findex = (FileIndex*)calloc(1, sizeof(FileIndex))) == NULL) {
 		perror("Beim allokieren des Speichers für FileIndex");
@@ -110,14 +110,11 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
-		findex->totalSize =  buf_where(b); 
 		linestart = findex->totalSize - strlen(line)- b->lineseplen;
 		
-		/*
+		
 		lineend = findex->totalSize;
-		printf("buf_where: %d strlen: %ld lineseplen: %d\n", buf_where(b), strlen(line), b->lineseplen);
-        printf("Start: %d End:%d line: %s \n", linestart, lineend,line);
-		*/
+		
 		
 		/* Sektionsanfang */
 		if (!strncmp(line, "From ", 5)) {
@@ -127,8 +124,9 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 			
 			entry = calloc(1, sizeof(FileIndexEntry));
 			entry->nr = findex->nEntries;
-			entry->seekpos = linestart;
+			entry->seekpos = buf_where(b);
 			
+			/* Füge an letzte Stelle ein */
 			if (!findex->entries) {
 				findex->entries = entry;
 			} else {
@@ -138,13 +136,20 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 				}
 				ptr->next = entry;				
 			}
-		}
-		
-		if (entry->nr) {
-			entry->lines++;
-			entry->size += strlen(line)+b->lineseplen;
+		} else {
+			/* Kein Zeilentrenner */
+			if (entry->nr) {
+				entry->lines++;
+				entry->size += strlen(line)+b->lineseplen+1;
+				findex->totalSize += strlen(line)+b->lineseplen+1;
+			}
+			
+			/*printf("buf_where: %d strlen: %ld lineseplen: %d\n", buf_where(b), strlen(line), b->lineseplen);*/
+			/*printf("Start: %d End:%d line: %s \n", linestart, lineend,line);*/
 			
 		}
+		
+
 				
 		
 		/* Wenn Zeile nicht über Buffer hinausgeht */
