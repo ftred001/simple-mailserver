@@ -17,11 +17,11 @@
 
 static int clientsocket;
 char sender[100] = {0};
-char receiver[80]= {0};
+char recipient[80]= {0};
 char FROMLINE[100];
 char smtp_lockfile[MAXDATEIPFAD] = {0};
-char mailbox[255];
-char message[PARAMMAX] = "";
+char mailbox[MAXDATEIPFAD];
+char valid_msg[PARAMMAX] = "";
 
 
 
@@ -60,34 +60,32 @@ void smtp_sighandler(int sig){
 	exit(1);
 }
 
-int validate_mail(DialogRec *d) {
+/* Validiert dass die Mailbox auch auf der Datenbank exisitert. */ 
+int validate_rcpt(DialogRec *d) {
 	int index;
 	int get;
 	char rcpt[80];
-	DBRecord empfaenger_rec = {"", "smtp", ""};
-	char *end;
-	char *start = strstr(d->param, "<");
+	DBRecord recipient_rec = {"", "smtp", ""};
 	
-	strcpy(rcpt, start+1);
-	end = strstr(rcpt, ">");
-	strcpy(end, "\0");
+	/* Kopiere Mailadresse in den Key */
+	strcpy(rcpt, d->param);
+	rcpt[strlen(rcpt)-1] = '\0';
+	strcpy(recipient_rec.key, rcpt);
 	
-	strcpy(empfaenger_rec.key, rcpt);
-	
-	index = db_search("mailserver.db", 0, &empfaenger_rec);
+	index = db_search("mailserver.db", 0, &recipient_rec);
 	if(index < 0){
-		strcpy(message, "550 unknown rcpt\r\n");
+		strcpy(valid_msg, "550 Empfänger unbekannt.\r\n");
 		return 0;
 	}
 	
-	get = db_get("mailserver.db", index, &empfaenger_rec);
+	get = db_get("mailserver.db", index, &recipient_rec);
 	if(get < 0){
-		strcpy(message, "500 Empfaenger Rec nicht gefunden!!\r\n");
+		strcpy(valid_msg, "500 Konnte DB Eintrag nicht auslesen.\r\n");
 		return 0;
 	}
 	
-	memset(mailbox, 0, 255);
-	strcpy(mailbox, empfaenger_rec.value);
+	memset(mailbox, 0, MAXDATEIPFAD);
+	strcpy(mailbox, recipient_rec.value);
 	
 	return 1;
 }
@@ -96,8 +94,8 @@ int validate_mail(DialogRec *d) {
 DialogRec SMTP_DIALOG[] = {
 	/* Command,		Param, 	State,	Next-State,	Validator */
 	{"helo", 		"", 	0, 		1},
-	{"mail from:<", 	"", 	1, 		2},
-	{"rcpt to:<", 	"", 	2, 		3, 		validate_mail},
+	{"mail from:<", "", 	1, 		2},
+	{"rcpt to:<", 	"", 	2, 		3, 		validate_rcpt},
 	{"data", 		"", 	3, 		4},
 	{".", 			"", 	4, 		5},
 	{"quit", 		"", 	5, 		0},
@@ -112,12 +110,12 @@ void create_fromline(){
 	time_t t;
 	memset(FROMLINE, 0, 100);
 	time(&t);
-	sprintf(FROMLINE, "FROM %s %s", sender, ctime(&t));
+	sprintf(FROMLINE, "From %s %s", sender, ctime(&t));
 }
 
 
 
-/* Gibt FD für das Anhängen an Mailbox zurück */
+/* Gibt FD für das Anhängen an Mailbox zurück und schreibt From Separator Line in die Mailbox */
 int append_to_mailbox(const char *pfad){
 	int fd = open(pfad, O_WRONLY | O_APPEND, 0640);
 	if(fd < 0){
@@ -160,6 +158,17 @@ int process_smtp(int infd, int outfd){
 			linebuf = buf_new(infd, "\r\n");
 		}
 		
+		if (buf_readline(linebuf, line, LINEBUFFERSIZE) != -1) {
+			prolRes = processLine(line, state, SMTP_DIALOG);
+		}
+		
+		
+		if (prolRes.failed) {
+			sprintf(error, "550 prolRes failed");
+		} else {
+			sprintf(error, "502 Command not implemented");
+		}
+		
 		/* DATA START*/
 		if(state == 4){
 			if(datafile < 0){
@@ -169,7 +178,7 @@ int process_smtp(int infd, int outfd){
 			
 			while((umbruch = buf_readline(linebuf, line, LINEBUFFERSIZE)) != -1){
 				prolRes = processLine(line, state, SMTP_DIALOG);
-				if(!strncmp(line, ".",1)){
+				if(!strncmp(prolRes.dialogrec->command, ".",1)){
 					if(!prolRes.failed){
 						state = prolRes.dialogrec->nextstate;
 						write(datafile, "\n", 1);
@@ -188,19 +197,6 @@ int process_smtp(int infd, int outfd){
 		}
 		/* DATA END */
 		
-		
-		/* read(infd, line, sizeof(line)); */
-		
-		if (buf_readline(linebuf, line, LINEBUFFERSIZE) != -1) {
-			prolRes = processLine(line, state, SMTP_DIALOG);
-		}
-		
-		
-		if (prolRes.failed) {
-			sprintf(error, "550 prolRes failed");
-		} else {
-			sprintf(error, "502 Command not implemented");
-		}
 		
 
 		
