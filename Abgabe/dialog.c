@@ -35,7 +35,7 @@ DialogRec *findDialogRec(char *command, DialogRec dialogspec[]) {
 
                 dialogrec = &dialogspec[i];
                 strcpy(dialogrec->param, command);
-                printf("drecord.command: %s param: X%sX\n", dialogrec->command, dialogrec->param);
+                /*printf("drecord.command: %s param: %s\n", dialogrec->command, dialogrec->param);*/
                 
                 return dialogrec;
 			}

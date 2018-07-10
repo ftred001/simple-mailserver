@@ -16,7 +16,8 @@
 #include <time.h>
 
 static int clientsocket;
-char sender[100];
+char sender[100] = {0};
+char receiver[80]= {0};
 char FROMLINE[100];
 char smtp_lockfile[MAXDATEIPFAD] = {0};
 char mailbox[255];
@@ -59,7 +60,7 @@ void smtp_sighandler(int sig){
 	exit(1);
 }
 
-int validate_rcpt(DialogRec *d) {
+int validate_mail(DialogRec *d) {
 	int index;
 	int get;
 	char rcpt[80];
@@ -81,7 +82,7 @@ int validate_rcpt(DialogRec *d) {
 	
 	get = db_get("mailserver.db", index, &empfaenger_rec);
 	if(get < 0){
-		strcpy(message, "500 Fehler!\r\n");
+		strcpy(message, "500 Empfaenger Rec nicht gefunden!!\r\n");
 		return 0;
 	}
 	
@@ -95,8 +96,8 @@ int validate_rcpt(DialogRec *d) {
 DialogRec SMTP_DIALOG[] = {
 	/* Command,		Param, 	State,	Next-State,	Validator */
 	{"helo", 		"", 	0, 		1},
-	{"mail from", 	"", 	1, 		2},
-	{"rcpt to", 	"", 	2, 		3, 		validate_rcpt},
+	{"mail from:<", 	"", 	1, 		2},
+	{"rcpt to:<", 	"", 	2, 		3, 		validate_mail},
 	{"data", 		"", 	3, 		4},
 	{".", 			"", 	4, 		5},
 	{"quit", 		"", 	5, 		0},
@@ -131,7 +132,7 @@ int append_to_mailbox(const char *pfad){
 int process_smtp(int infd, int outfd){
 	char line[LINEMAX];
 	ProlResult prolRes;
-	char error[LINEMAX] = "500 Fehler!\r\n";
+	char error[LINEMAX] = "500 Standardfehler!\r\n";
 	char filepath[MAXDATEIPFAD] = {0};
 	int datafile;
 	int state = 0;
@@ -140,9 +141,6 @@ int process_smtp(int infd, int outfd){
 	
 	LineBuffer *linebuf;
 	int umbruch;
-	
-	char *absender_end;
-	char *absender_start;
 	
 	char response[LINEBUFFERSIZE] = {0};
 	
@@ -155,22 +153,23 @@ int process_smtp(int infd, int outfd){
 	
 	
 	while(1){
+		/* RESETTE LINE */
 		memset(line, 0, LINEMAX);
 		
+		if (linebuf == NULL) {
+			linebuf = buf_new(infd, "\r\n");
+		}
+		
+		/* DATA START*/
 		if(state == 4){
-			
 			if(datafile < 0){
 				perror("Bei Oeffnen der datafile");
 				exit(2);
 			}
 			
-			
-			
-			linebuf = buf_new(infd, "\r\n");
-			
 			while((umbruch = buf_readline(linebuf, line, LINEBUFFERSIZE)) != -1){
+				prolRes = processLine(line, state, SMTP_DIALOG);
 				if(!strncmp(line, ".",1)){
-					prolRes = processLine(line, state, SMTP_DIALOG);
 					if(!prolRes.failed){
 						state = prolRes.dialogrec->nextstate;
 						write(datafile, "\n", 1);
@@ -185,16 +184,28 @@ int process_smtp(int infd, int outfd){
 				strcat(line, "\n");
 				write(datafile, line, strlen(line));
 			}
-			
 			continue;
 		}
+		/* DATA END */
 		
-		read(infd, line, sizeof(line));
+		
+		/* read(infd, line, sizeof(line)); */
+		
+		if (buf_readline(linebuf, line, LINEBUFFERSIZE) != -1) {
+			prolRes = processLine(line, state, SMTP_DIALOG);
+		}
+		
+		
+		if (prolRes.failed) {
+			sprintf(error, "550 prolRes failed");
+		} else {
+			sprintf(error, "502 Command not implemented");
+		}
+		
+
 		
 		/* HELO */
-		if(!strncasecmp(line, "helo",4)){
-			printf("HELO\n");
-			prolRes = processLine(line, state, SMTP_DIALOG);
+		if(!strncasecmp(prolRes.dialogrec->command, "helo",4)){
 			if(!prolRes.failed){
 				state = prolRes.dialogrec->nextstate;
 				sprintf(response, "250 Ok\r\n");
@@ -205,18 +216,14 @@ int process_smtp(int infd, int outfd){
 		}
 		
 		/* MAIL FROM */
-		else if(!strncasecmp(line, "mail from",9)){
-			printf("MAIL FROM\n");
-			prolRes = processLine(line, state, SMTP_DIALOG);
-			printf("%s %s\n", prolRes.dialogrec->param, prolRes.dialogrec->command);
+		else if(!strncasecmp(prolRes.dialogrec->command, "mail from:<",11)){
 			if(!prolRes.failed){
 				state = prolRes.dialogrec->nextstate;
 				memset(sender, 0, 100);
-				absender_start = strstr(line, "<");
-	
-				strcpy(sender, absender_start+1);
-				absender_end = strstr(sender, ">");
-				strcpy(absender_end, "\0");
+				strcpy(sender,prolRes.dialogrec->param);
+				sender[strlen(sender)-1] = '\0';
+				/* Schneide letztes zeichen ab*/
+				
 				sprintf(response, "250 Ok\r\n");
 			} else {
 				sprintf(response, "%s", error);
@@ -224,9 +231,7 @@ int process_smtp(int infd, int outfd){
 		}
 		
 		/* RCPT TO */
-		else if(!strncasecmp(line, "rcpt to",7)){
-			printf("rcpt to\n");
-			prolRes = processLine(line, state, SMTP_DIALOG);
+		else if(!strncasecmp(prolRes.dialogrec->command, "rcpt to:<",9)){
 			if(!prolRes.failed){
 				state = prolRes.dialogrec->nextstate;
 				strcpy(db_record.key, mailbox);
@@ -251,9 +256,7 @@ int process_smtp(int infd, int outfd){
 		}
 		
 		/* DATA */
-		else if(!strncasecmp(line, "data",4)){
-			printf("data\n");
-			prolRes = processLine(line, state, SMTP_DIALOG);
+		else if(!strncasecmp(prolRes.dialogrec->command, "data",4)){
 			if(!prolRes.failed){
 				state = prolRes.dialogrec->nextstate;
 				
@@ -268,9 +271,8 @@ int process_smtp(int infd, int outfd){
 		}
 		
 		/* . */
-		else if(!strncasecmp(line, ".",1)){
+		else if(!strncasecmp(prolRes.dialogrec->command, ".",1)){
 			printf(".\n");
-			prolRes = processLine(line, state, SMTP_DIALOG);
 			if(!prolRes.failed){
 				state = prolRes.dialogrec->nextstate;
 				sprintf(response,"250 Ok\r\n");
@@ -281,9 +283,8 @@ int process_smtp(int infd, int outfd){
 		}
 		
 		/* QUIT */
-		else if(!strncasecmp(line, "quit", 4)){
+		else if(!strncasecmp(prolRes.dialogrec->command, "quit", 4)){
 			printf("quit\n");
-			prolRes = processLine(line, state, SMTP_DIALOG);
 			if(!prolRes.failed){
 				state = prolRes.dialogrec->nextstate;
 				unlock_smtp_fp(smtp_lockfile);
