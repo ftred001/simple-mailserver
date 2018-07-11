@@ -50,18 +50,20 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	long index;
 	DBRecord rec;
 	char *errstring;
-	char delimiter[] = " ";
+	const char delimiter[] = " ";
 	char *argv[10]; /* Maximale Anzahl an Parametern. */
-	char *wort;
+	char *mem = (char*)calloc(LINEMAX, sizeof(char));
+	char *wort = (char*)calloc(LINEMAX, sizeof(char));
 	
 	memset(&rec, 0, sizeof(DBRecord));
 	
-	line[strlen(line)-1] = '\0';
+	sprintf(mem, "%s", line);
 	
-	wort = strtok(line, delimiter);
+	wort = strtok(mem, delimiter);
+	
 	for (i=0; i<=argc; i++) {
 		if (wort != NULL) {
-			argv[i] = calloc(1, LINEMAX);
+			argv[i] = (char*)calloc(LINEMAX, sizeof(char));
 			strcpy(argv[i], wort);
 			wort = strtok(NULL, delimiter);	
 		}
@@ -140,37 +142,55 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 			strcpy(rec.key,argv[1]);
 			strcpy(rec.cat,argv[2]);
 			strcpy(rec.value,argv[3]);
-			db_put(filepath, -1, &rec);
+			
+			if (db_search(filepath, 0, &rec) == -1) {
+				db_put(filepath, -1, &rec);
+			} else {
+				printf("Already exists. Did you mean update?\n");
+			}
 		}
 	}
+	
+	free(wort);
+	free(mem);
 	
 	return 0;
 }
 
+void create_testdata(char line[LINEMAX]) {
+	char *mem = (char*)calloc(LINEMAX, sizeof(char));
+	int linecounter;
+	char *wort = (char*)calloc(LINEMAX, sizeof(char));
+	char delimiter[] = " "; 
+		
+	
+	sprintf(mem, "%s",line);
+	
+	linecounter = 0;
+	
+	wort = strtok(mem, delimiter);
+
+	while(wort != NULL) {
+		linecounter++;
+		wort = strtok(NULL, delimiter);
+	}
+	execute_cmd(STD_FILEPATH, linecounter, line);
+	free(mem);
+	free(wort);
+}
 
 int main(int argc, char *argv[]) {
-	char *line = calloc(LINEMAX, sizeof(char));
-	char *mem = calloc(LINEMAX, sizeof(char));
-	int linecounter;
-	char *wort;
-	char delimiter[] = " ";
+	create_testdata("add joendhard mailbox joendhard.mbox");
+	create_testdata("add joendhard password biffel");
+	create_testdata("add port pop3 127.0.0.1");
+	create_testdata("add host pop3 8110");
+	create_testdata("add port smtp 8025");
+	create_testdata("add host smtp 127.0.0.1");
+	create_testdata("add j.biffel@mymaildings.de smtp joendhard");
 	
-
+	create_testdata("list");
 	
-	while (fgets(line, LINEMAX, stdin) != NULL) {
-		strcpy(mem, line);
-		linecounter = 0;
-
-		wort = strtok(line, delimiter);
-	
-		while(wort != NULL) {
-			linecounter++;
-			wort = strtok(NULL, delimiter);
-		}
-		execute_cmd(STD_FILEPATH, linecounter, mem);
-	}
-	
-	printf("=======\nDataBaseManager QUIT======\n");
+	printf("=======\nDataBaseManager FINISHED======\n");
 	
 	
 	return 0;

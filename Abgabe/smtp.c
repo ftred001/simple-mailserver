@@ -132,7 +132,7 @@ int process_smtp(int infd, int outfd){
 	ProlResult prolRes;
 	char error[LINEMAX] = "500 Standardfehler!\r\n";
 	char filepath[MAXDATEIPFAD] = {0};
-	int datafile;
+	int mailbox_fd;
 	int state = 0;
 	DBRecord db_record = {"", "", ""};
 	int db_index;
@@ -171,8 +171,8 @@ int process_smtp(int infd, int outfd){
 		
 		/* DATA START*/
 		if(state == 4){
-			if(datafile < 0){
-				perror("Bei Oeffnen der datafile");
+			if(mailbox_fd < 0){
+				perror("Bei Oeffnen der mbox-Datei");
 				exit(2);
 			}
 			
@@ -181,121 +181,117 @@ int process_smtp(int infd, int outfd){
 				if(!strncmp(prolRes.dialogrec->command, ".",1)){
 					if(!prolRes.failed){
 						state = prolRes.dialogrec->nextstate;
-						write(datafile, "\n", 1);
-						close(datafile);
+						write(mailbox_fd, "\n", 1);
+						close(mailbox_fd);
 						sprintf(response, "250 Ok\r\n");
 					} else {
 						printf("LineBuff error");
 						write(outfd, error, strlen(error));
 					}
 					break;
-				}
+				} printf("DATA: %s\n", line);
 				strcat(line, "\n");
-				write(datafile, line, strlen(line));
+				write(mailbox_fd, line, strlen(line));
 			}
 			continue;
-		}
-		/* DATA END */
-		
-		
+		} /* DATA END */
+		else {
+			/* HELO */
+			if(!strncasecmp(prolRes.dialogrec->command, "helo",4)){
+				if(!prolRes.failed){
+					state = prolRes.dialogrec->nextstate;
+					sprintf(response, "250 Ok\r\n");
+				} else {
+					sprintf(response, "%s",error);
 
-		
-		/* HELO */
-		if(!strncasecmp(prolRes.dialogrec->command, "helo",4)){
-			if(!prolRes.failed){
-				state = prolRes.dialogrec->nextstate;
-				sprintf(response, "250 Ok\r\n");
-			} else {
-				sprintf(response, "%s",error);
-
+				}
 			}
-		}
-		
-		/* MAIL FROM */
-		else if(!strncasecmp(prolRes.dialogrec->command, "mail from:<",11)){
-			if(!prolRes.failed){
-				state = prolRes.dialogrec->nextstate;
-				memset(sender, 0, 100);
-				strcpy(sender,prolRes.dialogrec->param);
-				sender[strlen(sender)-1] = '\0';
-				/* Schneide letztes zeichen ab*/
-				
-				sprintf(response, "250 Ok\r\n");
-			} else {
-				sprintf(response, "%s", error);
+			
+			/* MAIL FROM */
+			else if(!strncasecmp(prolRes.dialogrec->command, "mail from:<",11)){
+				if(!prolRes.failed){
+					state = prolRes.dialogrec->nextstate;
+					memset(sender, 0, 100);
+					strcpy(sender,prolRes.dialogrec->param);
+					sender[strlen(sender)-1] = '\0';
+					/* Schneide letztes zeichen ab*/
+					
+					sprintf(response, "250 Ok\r\n");
+				} else {
+					sprintf(response, "%s", error);
+				}
 			}
-		}
-		
-		/* RCPT TO */
-		else if(!strncasecmp(prolRes.dialogrec->command, "rcpt to:<",9)){
-			if(!prolRes.failed){
-				state = prolRes.dialogrec->nextstate;
-				strcpy(db_record.key, mailbox);
-				
-				db_index = db_search("mailserver.db", 0, &db_record);
-				if(db_index >= 0){
-					db_get("mailserver.db", db_index, &db_record);
+			
+			/* RCPT TO */
+			else if(!strncasecmp(prolRes.dialogrec->command, "rcpt to:<",9)){
+				if(!prolRes.failed){
+					state = prolRes.dialogrec->nextstate;
+					strcpy(db_record.key, mailbox);
+					
+					db_index = db_search("mailserver.db", 0, &db_record);
+					if(db_index >= 0){
+						db_get("mailserver.db", db_index, &db_record);
+					}
+					
+					strcpy(filepath, db_record.value);
+					sprintf(smtp_lockfile, "%s.lock", mailbox);
+					
+					if(!lock_smtp_fp(smtp_lockfile)){
+						sprintf(response, "500 file locked.\r\n");
+						exit(1);
+					}
+					sprintf(response, "250 Ok\r\n");
+				} else {
+					sprintf(response, "%s\r\n", prolRes.info);
 				}
 				
-				strcpy(filepath, db_record.value);
-				sprintf(smtp_lockfile, "%s.lock", mailbox);
-				
-				if(!lock_smtp_fp(smtp_lockfile)){
-					sprintf(response, "500 file locked.\r\n");
-					exit(1);
-				}
-				sprintf(response, "250 Ok\r\n");
-			} else {
-				sprintf(response, "%s\r\n", prolRes.info);
 			}
 			
-		}
-		
-		/* DATA */
-		else if(!strncasecmp(prolRes.dialogrec->command, "data",4)){
-			if(!prolRes.failed){
-				state = prolRes.dialogrec->nextstate;
-				
-				create_fromline();
-				datafile = append_to_mailbox(filepath);
-				sprintf(response, "354 End data with <CR><LF>.<CR><LF>\r\n");
+			/* DATA */
+			else if(!strncasecmp(prolRes.dialogrec->command, "data",4)){
+				if(!prolRes.failed){
+					state = prolRes.dialogrec->nextstate;
+					
+					create_fromline();
+					mailbox_fd = append_to_mailbox(filepath);
+					sprintf(response, "354 End data with <CR><LF>.<CR><LF>\r\n");
 
-			} else {
-				sprintf(response, "%s", error);
+				} else {
+					sprintf(response, "%s", error);
+				}
+				
 			}
 			
-		}
-		
-		/* . */
-		else if(!strncasecmp(prolRes.dialogrec->command, ".",1)){
-			printf(".\n");
-			if(!prolRes.failed){
-				state = prolRes.dialogrec->nextstate;
-				sprintf(response,"250 Ok\r\n");
-			} else {
-				sprintf(response, "%s", error);
+			/* . */
+			else if(!strncasecmp(prolRes.dialogrec->command, ".",1)){
+				printf(".\n");
+				if(!prolRes.failed){
+					state = prolRes.dialogrec->nextstate;
+					sprintf(response,"250 Ok\r\n");
+				} else {
+					sprintf(response, "%s", error);
+				}
+				
 			}
 			
-		}
-		
-		/* QUIT */
-		else if(!strncasecmp(prolRes.dialogrec->command, "quit", 4)){
-			printf("quit\n");
-			if(!prolRes.failed){
-				state = prolRes.dialogrec->nextstate;
-				unlock_smtp_fp(smtp_lockfile);
-				sprintf(response, "221 Bye\r\n");
+			/* QUIT */
+			else if(!strncasecmp(prolRes.dialogrec->command, "quit", 4)){
+				printf("quit\n");
+				if(!prolRes.failed){
+					state = prolRes.dialogrec->nextstate;
+					unlock_smtp_fp(smtp_lockfile);
+					sprintf(response, "221 Bye\r\n");
+				} else {
+					sprintf(response, "%s", error);
+				}
+				write(outfd, response, strlen(response));
+				break;
 			} else {
-				sprintf(response, "%s", error);
+				sprintf(response,"%s", error);
 			}
+			
 			write(outfd, response, strlen(response));
-			break;
-		} else {
-			sprintf(response,"%s", error);
 		}
-		
-		write(outfd, response, strlen(response));
-		
 	}
 	
 	return 0;
