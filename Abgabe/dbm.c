@@ -43,32 +43,15 @@ int match_filter(DBRecord *rec, const void *data) {
 	return 0;
 }
 
-int execute_cmd(const char *filepath, int argc, char *line) {
+
+int main(int argc, char *argv[]) {
 	int fd;
 	int outfd = 1;
-	int i=0;
 	long index;
-	DBRecord rec;
+	DBRecord rec = {0};
 	char *errstring;
-	const char delimiter[] = " ";
-	char *argv[10]; /* Maximale Anzahl an Parametern. */
-	char *mem = (char*)calloc(LINEMAX, sizeof(char));
-	char *wort = (char*)calloc(LINEMAX, sizeof(char));
-	
-	memset(&rec, 0, sizeof(DBRecord));
-	
-	sprintf(mem, "%s", line);
-	
-	wort = strtok(mem, delimiter);
-	
-	for (i=0; i<=argc; i++) {
-		if (wort != NULL) {
-			argv[i] = (char*)calloc(LINEMAX, sizeof(char));
-			strcpy(argv[i], wort);
-			wort = strtok(NULL, delimiter);	
-		}
-	}
-	
+	const char *filepath = "mailserver.db";
+		
 	
 	/* Erstellt Datei, falls nicht existiert */
 	if (strlen(filepath)) {
@@ -78,70 +61,72 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 	}
 	
 	close(fd);
+	
+	printf("%d %s %s\n", argc, argv[0], argv[1]);
 
 	
-	if (argc == 1) {
-		if (!strcmp(argv[0], "list")) {	
+	if (argc == 2) {
+		if (!strcmp(argv[1], "list")) {	
 			printf("===LIST ALL===\n");
 			db_list(filepath, outfd, match_filter,""); 
 		}
 	}
 	
-	if (argc == 2) {
+	if (argc == 3) {
         /* List mit Key Filter */
-		if (!strcmp(argv[0], "list")) {
+		if (!strcmp(argv[1], "list")) {
 			printf("===LIST===\n");
             db_list(filepath, outfd, key_filter,argv[1]); 
         }
         
         /* List mit Catfilter */
-		if (!strcmp(argv[0], "clist")) {
+		if (!strcmp(argv[1], "clist")) {
 			printf("===CLIST===\n");
             db_list(filepath, outfd, cat_filter,argv[1]); 
         }
         
         /* Suche: Key oder Cat */
         /* "search keyword" */
-		if (!strcmp(argv[0], "search")) {
-			printf("===SEARCH KEY || CAT ===\n");
-			strcpy(rec.key,argv[1]);
-			strcpy(rec.cat,argv[1]);
+		if (!strcmp(argv[1], "search")) {
+			printf("===SEARCH KEY || CAT %s ===\n", argv[2]);
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[2]);
 			printf("Search Result:%d\n", db_search(filepath, 0, &rec));
 		}
         
 		/* Lösche Indexnummer */
 		/* "delete indexnummer" */
-        if (!strcmp(argv[0], "delete")) {
-			index = strtoul(argv[1], &errstring, 10);
+        if (!strcmp(argv[1], "delete")) {
+			index = strtoul(argv[2], &errstring, 10);
             db_del(filepath, index);
 		}
 	}
 	
-	if (argc == 3) {
+	if (argc == 4) {
 		/* Suche: Key UND Cat */
         /* "search keyword" */
-		if (!strcmp(argv[0], "search")) {
+		if (!strcmp(argv[1], "search")) {
 			printf("===SEARCH Key && CAT===\n");
-			strcpy(rec.key,argv[1]);
-			strcpy(rec.cat,argv[2]);
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[3]);
 			printf("Search Result:%d\n", db_search(filepath, 0, &rec));
 		}
 	
 	}
 		
-	if (argc == 4) {
+	if (argc == 5) {
 		
-		if (!strcmp(argv[0], "update")) {
-			strcpy(rec.key,argv[1]);
-			strcpy(rec.value,argv[2]);
-			strcpy(rec.value, argv[3]);
+		if (!strcmp(argv[1], "update")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.value,argv[3]);
+			strcpy(rec.value, argv[4]);
 			db_update(filepath, &rec);
 		}
 		
-		if (!strcmp(argv[0], "add")) {
-			strcpy(rec.key,argv[1]);
-			strcpy(rec.cat,argv[2]);
-			strcpy(rec.value,argv[3]);
+		if (!strcmp(argv[1], "add")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[3]);
+			strcpy(rec.value,argv[4]);
 			
 			if (db_search(filepath, 0, &rec) == -1) {
 				db_put(filepath, -1, &rec);
@@ -150,48 +135,6 @@ int execute_cmd(const char *filepath, int argc, char *line) {
 			}
 		}
 	}
-	
-	free(wort);
-	free(mem);
-	
-	return 0;
-}
-
-void create_testdata(char line[LINEMAX]) {
-	char *mem = (char*)calloc(LINEMAX, sizeof(char));
-	int linecounter;
-	char *wort = (char*)calloc(LINEMAX, sizeof(char));
-	char delimiter[] = " "; 
-		
-	
-	sprintf(mem, "%s",line);
-	
-	linecounter = 0;
-	
-	wort = strtok(mem, delimiter);
-
-	while(wort != NULL) {
-		linecounter++;
-		wort = strtok(NULL, delimiter);
-	}
-	execute_cmd(STD_FILEPATH, linecounter, line);
-	free(mem);
-	free(wort);
-}
-
-int main(int argc, char *argv[]) {
-	create_testdata("add joendhard mailbox joendhard.mbox");
-	create_testdata("add joendhard password biffel");
-	create_testdata("add port pop3 127.0.0.1");
-	create_testdata("add host pop3 8110");
-	create_testdata("add port smtp 8025");
-	create_testdata("add host smtp 127.0.0.1");
-	create_testdata("add j.biffel@mymaildings.de smtp joendhard");
-	
-	create_testdata("list");
-	
-	printf("=======\nDataBaseManager FINISHED======\n");
-	
 	
 	return 0;
 }
