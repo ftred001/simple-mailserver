@@ -67,7 +67,7 @@ DialogRec dialogspec[] = {
 	{ "pass ",		"",		1,		2,			validate_hasparam },
 	{ "stat", 		"", 	2,		2,			validate_noparam },
 	{ "list", 		"", 	2,		2,			},
-	{ "list ", 		"", 	2,		2,			validate_hasparam},
+	{ "list", 		"", 	2,		2,			validate_hasparam},
 	{ "retr ", 		"",		2,		2,			validate_hasparam },
 	{ "noop",		"",		2,		2,			validate_noparam },
 	{ "rset",		"",		2,		2,			validate_noparam  },
@@ -211,8 +211,25 @@ int process_pop3(int infd, int outfd) {
                 sprintf(response, "+OK %d %d\r\n", file_index->nEntries, file_index->totalSize);
             }
             
+			/* 2 list msgno */
+            if (!strncasecmp(prolRes.dialogrec->command, "list",4) && (strlen(prolRes.dialogrec->param))) {
+                msgno = atoi(prolRes.dialogrec->param);
+                                
+                fi_entry = fi_find(file_index, msgno);
+                
+                if (fi_entry != NULL) {
+					if (fi_entry->del_flag == 0) {
+						sprintf(response,"+OK %d %d\r\n", fi_entry->nr, fi_entry->size);  
+					} else {
+						sprintf(response,"-ERR couldnt find that msgno \r\n");
+					}
+                                      
+                }
+                
+            }
+            
             /* 2 list */
-            if (!strcasecmp(prolRes.dialogrec->command, "list") && (!strlen(prolRes.dialogrec->param))) {
+            if (!strncasecmp(prolRes.dialogrec->command, "list",4) && (!strlen(prolRes.dialogrec->param))) {
                                 
                 if (file_index->entries == NULL) {
                     perror("Keine Mails vorhanden!");
@@ -239,22 +256,7 @@ int process_pop3(int infd, int outfd) {
                 
             }
             
-            /* 2 list msgno */
-            if (!strcasecmp(prolRes.dialogrec->command, "list ") && (strlen(prolRes.dialogrec->param))) {
-                msgno = atoi(prolRes.dialogrec->param);
-                                
-                fi_entry = fi_find(file_index, msgno);
-                
-                if (fi_entry != NULL) {
-					if (fi_entry->del_flag == 0) {
-						sprintf(response,"+OK %d %d\r\n", fi_entry->nr, fi_entry->size);  
-					} else {
-						sprintf(response,"-ERR couldnt find that msgno \r\n");
-					}
-                                      
-                }
-                
-            }
+
             
             /* 2 retr msgno */
             if (!strcasecmp(prolRes.dialogrec->command, "retr ")) {

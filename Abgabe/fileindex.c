@@ -86,8 +86,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	char *line = (char*)calloc(LINEBUFFERSIZE, sizeof(char));
 	LineBuffer *b = NULL;
 	int fd, umbruch=0;
-	int linestart;
-	int lineend;
+	/* int linestart, lineend;*/
+
 	
 	if ((findex = (FileIndex*)calloc(1, sizeof(FileIndex))) == NULL) {
 		perror("Beim allokieren des Speichers für FileIndex");
@@ -110,10 +110,8 @@ FileIndex *fi_new(const char *filepath, const char *separator) {
 	
 	/* FIEntry für jeden Abschnitt. */
 	while ((umbruch = buf_readline(b, line, LINEBUFFERSIZE)) !=-1) {
-		linestart = findex->totalSize - strlen(line)- b->lineseplen;
-		
-		
-		lineend = findex->totalSize;
+		/*linestart = findex->totalSize - strlen(line)- b->lineseplen;
+		lineend = findex->totalSize;*/
 		
 		
 		/* Sektionsanfang */

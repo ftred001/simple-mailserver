@@ -51,6 +51,15 @@ int main(int argc, char *argv[]) {
 	DBRecord rec = {0};
 	char *errstring;
 	const char *filepath = "mailserver.db";
+	
+	DBRecord rec1 = {"joendhard","mailbox","joendhard.mbox"};
+	DBRecord rec2 = {"joendhard","password","biffel"};
+	DBRecord rec3 = {"host","pop3","127.0.0.1"};
+	DBRecord rec4 = {"port","pop3","8110"};
+	DBRecord rec5 = {"host","smtp","127.0.0.1"};
+	DBRecord rec6 = {"port","smtp","8025"};
+	DBRecord rec7 = {"j.biffel@mymaildings.de","smtp","joendhard"};
+
 		
 	
 	/* Erstellt Datei, falls nicht existiert */
@@ -70,6 +79,21 @@ int main(int argc, char *argv[]) {
 			printf("===LIST ALL===\n");
 			db_list(filepath, outfd, match_filter,""); 
 		}
+		
+		
+		if (!strcmp(argv[1], "test")) {
+			printf("Generating Testdata...\n");
+			if (db_search(filepath, 0, &rec1) == -1) db_put(filepath, -1, &rec1);
+			if (db_search(filepath, 0, &rec2) == -1) db_put(filepath, -1, &rec2);
+			if (db_search(filepath, 0, &rec3) == -1) db_put(filepath, -1, &rec3);
+			if (db_search(filepath, 0, &rec4) == -1) db_put(filepath, -1, &rec4);
+			if (db_search(filepath, 0, &rec5) == -1) db_put(filepath, -1, &rec5);
+			if (db_search(filepath, 0, &rec6) == -1) db_put(filepath, -1, &rec6);
+			if (db_search(filepath, 0, &rec7) == -1) db_put(filepath, -1, &rec7);
+
+			printf("Creating Testdata completed\n");
+		}
+		
 	}
 	
 	if (argc == 3) {
@@ -95,8 +119,6 @@ int main(int argc, char *argv[]) {
             db_del(filepath, index);
 		}
 		
-		
-
 		
 	}
 	
@@ -126,7 +148,6 @@ int main(int argc, char *argv[]) {
 	}
 		
 	if (argc == 5) {
-		
 		if (!strcmp(argv[1], "update")) {
 			strcpy(rec.key,argv[2]);
 			strcpy(rec.cat,argv[3]);
