@@ -87,7 +87,6 @@ int db_list(const char *path, int outfd,
 
 /* Sucht Inhalt ab Offset und gibt Index zurück. */
 int db_search(const char *filepath, int start, DBRecord *record) {
-	/* TODO: Fehlerfall einarbeiten -> return -42 */
 	int map_fd, file_length, i;
 	unsigned long data_count;
 	DBRecord *record_map;
@@ -217,8 +216,10 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 	strcpy(record_map[index].key, record->key);
 	strcpy(record_map[index].cat, record->cat);
 	strcpy(record_map[index].value,record->value);
+
+	
     
-    printf("UPDATE RECORD (Index: %d)", index);
+    printf("UPDATE RECORD (Index: %d)\n", index);
 	
 	munmap(record_map, file_length);
 	close(fd);
@@ -228,18 +229,22 @@ int db_put(const char *filepath, int index, const DBRecord *record) {
 /* Aktualisiert Value von gefundenem Datensatz oder fügt Datensatz ein. */
 int db_update(const char *filepath, const DBRecord *new) {
 	int search_result;
+    DBRecord *mem = (DBRecord*)calloc(1, sizeof(DBRecord));
     
     printf("======UPDATE======\n");
-	
+	printf("NEW: %s %s %s\n", new->key, new->cat, new->value);
+	strcpy(mem->key, new->key);
+	strcpy(mem->cat, new->cat);
+	strcpy(mem->value, new->value);
     search_result = db_search(filepath, 0, (DBRecord*) new);
     
     if (search_result != -42) {
-		printf("Datensatz gefunden bei %d \n",search_result);
-		db_put(filepath, search_result, new);
+		db_put(filepath, search_result, (DBRecord*) mem);
 	} else {
+		free(mem);
 		return -1;
 	}
-        
+	free(mem);
 	return 0;
 }
 

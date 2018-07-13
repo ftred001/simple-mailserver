@@ -76,13 +76,7 @@ int main(int argc, char *argv[]) {
         /* List mit Key Filter */
 		if (!strcmp(argv[1], "list")) {
 			printf("===LIST===\n");
-            db_list(filepath, outfd, key_filter,argv[1]); 
-        }
-        
-        /* List mit Catfilter */
-		if (!strcmp(argv[1], "clist")) {
-			printf("===CLIST===\n");
-            db_list(filepath, outfd, cat_filter,argv[1]); 
+            db_list(filepath, outfd, key_filter,argv[2]); 
         }
         
         /* Suche: Key oder Cat */
@@ -100,6 +94,10 @@ int main(int argc, char *argv[]) {
 			index = strtoul(argv[2], &errstring, 10);
             db_del(filepath, index);
 		}
+		
+		
+
+		
 	}
 	
 	if (argc == 4) {
@@ -111,6 +109,19 @@ int main(int argc, char *argv[]) {
 			strcpy(rec.cat,argv[3]);
 			printf("Search Result:%d\n", db_search(filepath, 0, &rec));
 		}
+		
+		/* Add mit StandardValue */
+		if (!strcmp(argv[1], "add")) {
+			strcpy(rec.key,argv[2]);
+			strcpy(rec.cat,argv[3]);
+			strcpy(rec.value, "---");
+			if (db_search(filepath, 0, &rec) == -1) {
+				db_put(filepath, -1, &rec);
+			} else {
+				printf("Already exists. Did you mean update?\n");
+			}
+		}
+		
 	
 	}
 		
@@ -118,7 +129,7 @@ int main(int argc, char *argv[]) {
 		
 		if (!strcmp(argv[1], "update")) {
 			strcpy(rec.key,argv[2]);
-			strcpy(rec.value,argv[3]);
+			strcpy(rec.cat,argv[3]);
 			strcpy(rec.value, argv[4]);
 			db_update(filepath, &rec);
 		}
